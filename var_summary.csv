@@ -1,0 +1,28 @@
+variable,meaning,variable_type,coding,pandas_dtype,n_unique,possible_values_or_categories,range,summary
+gender_0male_1female,gender,Binary,"0=male, 1=female",int64,2,"0, 1",Not Applicable,0: 2119 (53.5%); 1: 1842 (46.5%)
+age_YEARS,age (years),Continuous,years,float64,3939,Not Applicable,18.35–99.82,"Mean = 74.26, median = 76.18, SD = 12.21"
+diabetes,history of diabetes,Binary,"0=no, 1=yes",int64,2,"0, 1",Not Applicable,0: 1814 (45.8%); 1: 2147 (54.2%)
+hypertension,history of hypertension,Binary,"0=no, 1=yes",int64,2,"0, 1",Not Applicable,0: 529 (13.4%); 1: 3432 (86.6%)
+COPD,history of chronic obstructive pulmonary disease,Binary,"0=no, 1=yes",int64,2,"0, 1",Not Applicable,0: 3556 (89.8%); 1: 405 (10.2%)
+PVD,history of peripheral vascular disease,Binary,"0=no, 1=yes",int64,2,"0, 1",Not Applicable,0: 3594 (90.7%); 1: 367 (9.3%)
+CKD,history of chronic kidney disease,Binary,"0=no, 1=yes",int64,2,"0, 1",Not Applicable,0: 3156 (79.7%); 1: 805 (20.3%)
+IHD,history of ischemic heart disease,Binary,"0=no, 1=yes",int64,2,"0, 1",Not Applicable,0: 1477 (37.3%); 1: 2484 (62.7%)
+AF,history of atrial fibrilation,Binary,"0=no, 1=yes",int64,2,"0, 1",Not Applicable,0: 2353 (59.4%); 1: 1608 (40.6%)
+VHD,history of valvular heart disease),Binary,"0=no, 1=yes",int64,2,"0, 1",Not Applicable,0: 2980 (75.2%); 1: 981 (24.8%)
+PHTN,history of pulmonary hypertension,Binary,"0=no, 1=yes",int64,2,"0, 1",Not Applicable,0: 3224 (81.4%); 1: 737 (18.6%)
+BNP,B-type natriuretic peptide on admission,Continuous,Not Applicable,float64,2052,Not Applicable,2.68–4813.58,"Mean = 1070.24, median = 778.10, SD = 916.85"
+BUN_admission,blood urea nitrogen on admission (mg/dL),Continuous,mg/dL,float64,458,Not Applicable,1.80–139.00,"Mean = 30.67, median = 25.00, SD = 18.07"
+BUN_discharge,blood urea nitrogen on discharge (mg/dL),Continuous,mg/dL,float64,262,Not Applicable,6.00–236.30,"Mean = 34.76, median = 28.00, SD = 20.79"
+creatinine_admission,creatinine on admission (mg/dL),Continuous,mg/dL,float64,349,Not Applicable,0.20–12.53,"Mean = 1.50, median = 1.23, SD = 1.01"
+creatinine_discharge,creatinine on discharge (mg/dL),Continuous,mg/dL,float64,380,Not Applicable,0.20–11.44,"Mean = 1.53, median = 1.23, SD = 0.99"
+GFR_admission,glomerular filtration rate on admission (mL/min/1.73m2),Continuous,mL/min/1.73m2,float64,3851,Not Applicable,3.01–163.53,"Mean = 52.09, median = 49.84, SD = 24.18"
+GFR_discharge,glomerular filtration rate on discharge (mL/min/1.73m2),Continuous,mL/min/1.73m2,float64,3827,Not Applicable,4.30–189.74,"Mean = 52.57, median = 50.43, SD = 24.90"
+WBC,white blood cells,Continuous,Not Applicable,float64,997,Not Applicable,1.32–205.52,"Mean = 10.22, median = 8.92, SD = 7.88"
+sodium,sodium (mEq/L),Continuous,mEq/L,float64,244,Not Applicable,109.04–152.00,"Mean = 137.22, median = 138.00, SD = 4.50"
+RDW,red blood cell distribution width,Continuous,Not Applicable,float64,110,Not Applicable,11.50–27.40,"Mean = 15.59, median = 15.30, SD = 1.88"
+platelets,platelet count (1000/µL),Continuous,1000/µL,float64,683,Not Applicable,18.20–1633.00,"Mean = 239.81, median = 225.00, SD = 96.35"
+bilirubin,bilirubin (mg/dL),Continuous,mg/dL,float64,322,Not Applicable,0.07–6.17,"Mean = 0.73, median = 0.60, SD = 0.52"
+potassium,potassium (mEq/L),Continuous,mEq/L,float64,125,Not Applicable,2.40–10.05,"Mean = 4.31, median = 4.30, SD = 0.62"
+length_of_stay_DAYS,length of stay in hospital (days),Continuous,days,float64,3961,Not Applicable,0.08–125.00,"Mean = 7.18, median = 5.13, SD = 7.93"
+time_discharge_to_death_MONTHS,time from discharge to death or end of follow-up (months),Survival time,months,float64,825,Not Applicable,0.00–36.00,"Mean = 22.28, median = 25.60, SD = 13.65"
+death,death within three years of discharge,Event indicator / Binary outcome,"0=no, 1=yes",int64,2,"0, 1",Not Applicable,0: 2282 (57.6%); 1: 1679 (42.4%)
