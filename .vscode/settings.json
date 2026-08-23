@@ -2,5 +2,7 @@
     "workbench.editorAssociations": {
         "*.copilotmd": "vscode.markdown.preview.editor",
         "file:/**/*.csv": "jupyter-data-wrangler"
-    }
+    },
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000
 }
