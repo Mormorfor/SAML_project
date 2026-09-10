@@ -1,0 +1,7 @@
+,model A,model B,shared of top,shared %,Jaccard
+0,Cox,RSF,113,71.069,0.551
+1,Cox,DeepSurv,141,88.679,0.797
+2,Cox,Cox-Time,140,88.05,0.787
+3,RSF,DeepSurv,124,77.987,0.639
+4,RSF,Cox-Time,117,73.585,0.582
+5,DeepSurv,Cox-Time,138,86.792,0.767

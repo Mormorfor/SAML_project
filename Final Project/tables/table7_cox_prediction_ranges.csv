@@ -1,0 +1,4 @@
+covariate,grid low,grid high,S at grid low,S at grid high,drop over grid,Q1,Q3,S at Q1,S at Q3,drop over IQR
+Age (years),39.323,94.831,0.962,0.641,0.321,67.094,83.143,0.876,0.766,0.11
+RDW (%),12.8,21.433,0.864,0.659,0.205,14.5,16.2,0.836,0.802,0.034
+BUN at discharge (mg/dL),11.0,105.0,0.876,0.298,0.577,22.0,38.0,0.842,0.779,0.064

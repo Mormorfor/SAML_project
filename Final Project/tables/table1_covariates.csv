@@ -1,0 +1,32 @@
+Covariate,Summary,All patients (n = 3961)
+[Demographics],,
+Age (years),"median [Q1, Q3]","76.18 [66.85, 83.24]"
+Female sex,n (%),1842 (46.5%)
+[Comorbidities (as recorded in PA1)],,
+Diabetes,n (%),2147 (54.2%)
+Hypertension,n (%),3432 (86.6%)
+COPD,n (%),405 (10.2%)
+Peripheral vascular disease,n (%),367 (9.3%)
+Chronic kidney disease,n (%),805 (20.3%)
+Ischaemic heart disease,n (%),2484 (62.7%)
+Atrial fibrillation,n (%),1608 (40.6%)
+Valvular heart disease,n (%),981 (24.8%)
+Pulmonary hypertension,n (%),737 (18.6%)
+[Laboratory values on admission],,
+"BNP, admission (pg/mL)","median [Q1, Q3]","778.10 [734.38, 832.40]"
+"BUN, admission (mg/dL)","median [Q1, Q3]","25.00 [19.00, 37.00]"
+"Creatinine, admission (mg/dL)","median [Q1, Q3]","1.23 [0.95, 1.70]"
+"GFR, admission (mL/min/1.73m2)","median [Q1, Q3]","49.84 [34.64, 67.64]"
+[Laboratory values on discharge],,
+"BUN, discharge (mg/dL)","median [Q1, Q3]","28.00 [22.00, 39.00]"
+"Creatinine, discharge (mg/dL)","median [Q1, Q3]","1.23 [1.00, 1.56]"
+"GFR, discharge (mL/min/1.73m2)","median [Q1, Q3]","50.43 [34.76, 67.63]"
+[Other laboratory values],,
+White blood cells (1000/uL),"median [Q1, Q3]","8.92 [7.00, 11.42]"
+Sodium (mEq/L),"median [Q1, Q3]","138.00 [135.00, 140.00]"
+Red cell distribution width (%),"median [Q1, Q3]","15.30 [14.50, 16.10]"
+Platelets (1000/uL),"median [Q1, Q3]","225.00 [180.00, 280.30]"
+Bilirubin (mg/dL),"median [Q1, Q3]","0.60 [0.50, 0.72]"
+Potassium (mEq/L),"median [Q1, Q3]","4.30 [3.90, 4.60]"
+[Hospitalisation],,
+Length of stay (days),"median [Q1, Q3]","5.13 [3.08, 8.34]"

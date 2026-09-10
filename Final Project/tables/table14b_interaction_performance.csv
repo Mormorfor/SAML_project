@@ -1,0 +1,4 @@
+model,Uno's C (test),IBS (test),CV IBS,CV IBS SE
+Cox (additive),0.6959,0.115,0.1097,0.003
++ BUN_discharge x delta_BUN,0.6933,0.1152,0.1094,0.003
++ age_YEARS x BUN_discharge,0.6955,0.1151,0.1097,0.003

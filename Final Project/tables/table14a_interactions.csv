@@ -1,0 +1,3 @@
+interaction term,HR,lower 95%,upper 95%,Wald p,LR statistic,LR p,concordance
+BUN_discharge:delta_BUN,1.0001,1.0,1.0002,0.0124,5.8541,0.0155,0.6996
+age_YEARS:BUN_discharge,1.0001,0.9998,1.0003,0.5921,0.288,0.5915,0.6995

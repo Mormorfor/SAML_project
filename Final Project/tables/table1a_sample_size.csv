@@ -1,0 +1,6 @@
+,n,% of cohort
+Patients (sample size),3961,100.0
+Observed deaths (death = 1),1679,42.39
+Censored observations (death = 0),2282,57.61
+  of which administratively censored at 36 months,1473,37.19
+  of which lost to follow-up before 36 months,809,20.42

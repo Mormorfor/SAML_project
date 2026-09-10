@@ -1,0 +1,17 @@
+,test_statistic,p
+BUN_discharge,4.3917,0.0361
+length_of_stay_DAYS,3.9114,0.048
+creatinine_discharge,2.7398,0.0979
+C(cat_comorbidities)[T.4+],2.7004,0.1003
+bilirubin,2.4538,0.1172
+sodium,1.6433,0.1999
+C(cat_comorbidities)[T.2-3],1.3876,0.2388
+gender_0male_1female,1.2686,0.26
+age_YEARS,1.064,0.3023
+GFR_discharge,0.8278,0.3629
+delta_BUN,0.6245,0.4294
+potassium,0.6007,0.4383
+platelets,0.2245,0.6357
+WBC,0.1214,0.7276
+BNP,0.087,0.768
+RDW,0.0246,0.8754

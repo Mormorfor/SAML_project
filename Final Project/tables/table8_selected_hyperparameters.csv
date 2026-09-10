@@ -1,0 +1,5 @@
+model,selected hyperparameters,CV IBS,CV IBS SE
+Cox (reference),,0.1097,0.003
+RSF,"max_features = 4, min_samples_leaf = 50, n_estimators = 500",0.1116,0.0033
+DeepSurv,"dropout = 0.4, hidden = [16], lr = 0.001, epochs = 119",0.1096,0.0027
+Cox-Time,"dropout = 0.4, hidden = [16], lr = 0.01, epochs = 32",0.1105,0.003

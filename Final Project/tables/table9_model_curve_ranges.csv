@@ -1,0 +1,13 @@
+covariate,model,S at grid low,S at grid high,drop over grid,drop over IQR
+Age (years),Cox,0.962,0.641,0.321,0.11
+Age (years),RSF,0.924,0.627,0.297,0.118
+Age (years),DeepSurv,0.945,0.584,0.361,0.105
+Age (years),Cox-Time,0.946,0.633,0.313,0.114
+RDW (%),Cox,0.864,0.659,0.205,0.034
+RDW (%),RSF,0.904,0.801,0.103,0.057
+RDW (%),DeepSurv,0.891,0.709,0.183,0.044
+RDW (%),Cox-Time,0.885,0.677,0.208,0.043
+BUN at discharge (mg/dL),Cox,0.876,0.298,0.577,0.064
+BUN at discharge (mg/dL),RSF,0.899,0.719,0.18,0.032
+BUN at discharge (mg/dL),DeepSurv,0.885,0.465,0.42,0.061
+BUN at discharge (mg/dL),Cox-Time,0.898,0.389,0.509,0.078

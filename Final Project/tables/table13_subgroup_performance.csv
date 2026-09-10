@@ -1,0 +1,17 @@
+subgroup,model,n,deaths by 12m,Uno's C,IBS
+Discharge BUN <= 28,Cox,430,81,0.714,0.0901
+Discharge BUN <= 28,RSF,430,81,0.6946,0.0933
+Discharge BUN <= 28,DeepSurv,430,81,0.7018,0.091
+Discharge BUN <= 28,Cox-Time,430,81,0.7079,0.0899
+Discharge BUN > 28,Cox,363,118,0.6361,0.1446
+Discharge BUN > 28,RSF,363,118,0.6173,0.1449
+Discharge BUN > 28,DeepSurv,363,118,0.6346,0.1441
+Discharge BUN > 28,Cox-Time,363,118,0.6349,0.1431
+Age <= 76,Cox,406,62,0.6663,0.0787
+Age <= 76,RSF,406,62,0.701,0.0783
+Age <= 76,DeepSurv,406,62,0.6785,0.0786
+Age <= 76,Cox-Time,406,62,0.6815,0.0784
+Age > 76,Cox,387,137,0.6172,0.1532
+Age > 76,RSF,387,137,0.58,0.1574
+Age > 76,DeepSurv,387,137,0.6085,0.1538
+Age > 76,Cox-Time,387,137,0.6203,0.1519

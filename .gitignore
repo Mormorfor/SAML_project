@@ -1,7 +1,17 @@
 /הקצאות נתונים למטלת הפרויקט.xlsx
-*.csv
 *.xlsx
 *.pdf
 *.html
-*.png
+
+# Data and earlier assignments stay out of the repo; the final project's own results go in,
+# so that both of us see the same tables and can load the same fitted models instead of
+# refitting and landing on different numbers.
+# Note: the notebook reads ../PA1/imputed_data.csv, which is not in the repo -- keep your own
+# copy at that path.
+*.csv
 *.joblib
+!Final Project/tables/*.csv
+!Final Project/trained_models/*.joblib
+
+# except the forest: 384 MB, over GitHub's 100 MB per-file limit. Refit it from Section 7.2.
+Final Project/trained_models/rsf.joblib
