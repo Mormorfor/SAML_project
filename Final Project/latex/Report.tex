@@ -244,7 +244,7 @@ best-epoch count.
 Table~5 gives the selections. Both networks took the smallest architecture on offer with the
 higher dropout rate, and the forest the largest leaf size and most restrictive feature
 sampling: every search moved to the least flexible end of its grid, which anticipates the
-test-set result. All four cross-validated scores lie within 0.0023 of one another, inside
+test-set result. All four cross-validated scores lie within 0.0020 of one another, inside
 the standard errors of about 0.003.
 
 \subsection{Evaluation measures}
@@ -314,28 +314,30 @@ section tests.
 \subsection{Do the flexible models see the covariates differently? (RQ2)}
 
 Figure~5 overlays all four models on the grids of Section~6.2 and Table~9 quantifies them.
-Over the interquartile range they agree: age moves predicted one-year survival by 0.09 to
-0.12, discharge BUN by 0.03 to 0.07 and RDW by 0.03 to 0.06, and all four put age first.
+Over the interquartile range they agree: age moves predicted one-year survival by 0.10 to
+0.12, discharge BUN by 0.03 to 0.08 and RDW by 0.03 to 0.06, and all four put age first.
 Only the forest reorders the other two, ranking RDW above discharge BUN.
 
 They part company in the tails. Across the plotted BUN range Cox falls to 0.298, Cox-Time to
-0.462, DeepSurv to 0.512 and the forest to 0.719. Cox extrapolates its log-hazard slope
-wherever the grid goes; the networks follow it to about 40\,mg/dL and then bend upwards; the
+0.389, DeepSurv to 0.465 and the forest to 0.719. Cox extrapolates its log-hazard slope
+wherever the grid goes; DeepSurv follows it to about 40\,mg/dL and then bends upwards, while
+Cox-Time runs a little below it from 40 to about 85\,mg/dL before crossing back above; the
 forest flattens above about 75\,mg/dL, where only 141 of the 3,168 training patients sit and
 a leaf of 50 leaves no split to make. That plateau is the forest running out of data, not
 evidence that risk stops rising. RDW repeats the pattern mildly and age agrees best,
 separating only past 85 years. So the flexible models find no non-linearity that the Cox
 model misses where patients actually are; their disagreement is confined to the sparse
-tails, and there all three are more conservative than the linear extrapolation.
+tails, and at the far end of every grid all three finish above the linear extrapolation.
 
 \subsection{Test-set model comparison (RQ1)}
 
 The 793 test patients are used here for the first time. Mean predicted one-year survival is
-nearly identical across models (0.748, 0.751, 0.745 and 0.745 for Cox, the forest, DeepSurv
+nearly identical across models (0.748, 0.751, 0.744 and 0.744 for Cox, the forest, DeepSurv
 and Cox-Time) but the spread is not: the forest has standard deviation 0.118 and never
 predicts below 0.441, while Cox has 0.161 and sends two patients essentially to zero ---
 those with discharge BUN of 137 and 236\,mg/dL, the second beyond the training maximum of
-199.7. These are the tails of Figure~5 from the other side: the forest cannot leave the
+199.7. DeepSurv reaches 0.002 at its own minimum and Cox-Time stops at 0.106. These are the
+tails of Figure~5 from the other side: the forest cannot leave the
 range its leaves cover, and Cox extrapolates without limit.
 
 \begin{table}[H]
@@ -352,58 +354,70 @@ Model & Uno's C ($\tau = 12$) & IBS (0--12 months) & Mean $|$observed $-$ predic
 \midrule
 Cox      & 0.6959 & 0.1150 & 0.0367 \\
 RSF      & 0.6805 & 0.1169 & 0.0385 \\
-DeepSurv & 0.6904 & 0.1152 & 0.0337 \\
-Cox-Time & 0.6909 & 0.1148 & 0.0198 \\
+DeepSurv & 0.6909 & 0.1153 & 0.0420 \\
+Cox-Time & 0.6967 & 0.1142 & 0.0422 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Uno's C spans 0.015 (Cox 0.696, Cox-Time 0.691, DeepSurv 0.690, RSF 0.681) and the
-integrated Brier score 0.0021 (Cox-Time 0.1148, Cox 0.1150, DeepSurv 0.1152, RSF 0.1169).
-With 199 one-year deaths behind them, neither spread should be read as a ranking; what they
-support is that no flexible model discriminates or predicts better than the Cox model. Test
+Uno's C spans 0.016 (Cox-Time 0.697, Cox 0.696, DeepSurv 0.691, RSF 0.681) and the
+integrated Brier score 0.0027 (Cox-Time 0.1142, Cox 0.1150, DeepSurv 0.1153, RSF 0.1169).
+Cox-Time leads Cox by 0.0008 on each, twenty times smaller than the spread across the four
+models; with only 199 one-year deaths behind them neither ordering should be read as a
+ranking, and what they support is that Cox, Cox-Time and DeepSurv discriminate and predict
+equally well while only the forest is behind. Test
 IBS sits slightly above the cross-validated values of Table~5, as expected on unseen
 patients.
 
 Calibration (Figure~6) plots each decile's mean prediction against its Kaplan--Meier
-survival. Deciles hold about 80 patients, so the intervals are roughly 0.2 wide. Cox-Time is
-best calibrated, with a mean gap of 0.020, about half the others'. DeepSurv and Cox each
-have one clear miss: DeepSurv predicts 0.658 for its third decile against 0.500 observed,
-and Cox predicts 0.400 and 0.591 for its two lowest against 0.492 and 0.485. The forest
-misses structurally instead --- its decile means span only 0.538 to 0.912 against 0.400 to
-0.933 for Cox, with the middle deciles below the diagonal and the healthiest above it (0.912
-against 0.950) --- so it is insufficiently confident about both good and bad prognoses.
+survival. Deciles hold about 80 patients, so the intervals are roughly 0.2 wide. Cox is the
+best calibrated at a mean gap of 0.037, though it misses at its bottom end, predicting 0.400
+and 0.591 for its two lowest deciles against 0.492 and 0.485 observed --- separating two
+groups the test data does not separate at all. DeepSurv has the single largest miss in the
+figure, 0.657 predicted against 0.496 observed in its third decile. Cox-Time scatters around
+the diagonal instead of missing at one point, its fourth decile 0.098 too optimistic, its
+fifth 0.065 too pessimistic and its seventh 0.066 too optimistic, which leaves it last on the
+summary measure without any single catastrophic decile. The forest is no longer worst on that
+measure but is the one that misses structurally: its decile means span only 0.538 to 0.912
+against 0.400 to 0.933 for Cox, with the middle deciles below the diagonal (0.700 against
+0.611 observed, 0.747 against 0.675) and the healthiest above it (0.912 against 0.950), so it
+is insufficiently confident about both good and bad prognoses.
 
-No model wins on all three measures: Cox on the C-index, Cox-Time on IBS (by 0.0002) and
-calibration, the forest last on all three. Every margin but the calibration one is inside
-what this test set can resolve. For RQ1, then: one-year prediction from discharge
-information sits at a C-index of about 0.69, and relaxing the Cox assumptions did not improve
-discrimination or accuracy. This follows from Figure~5 --- the models predict alike where
+No model wins on all three measures: Cox-Time leads on the C-index and IBS but is the worst
+calibrated, Cox is the best calibrated and second on the other two, and the forest is last on
+discrimination and accuracy. Cox-Time's margins over Cox are 0.0008 on each, far inside what
+199 one-year deaths among 793 patients can resolve, and the calibration spread across all
+four models is only 0.006. For RQ1, then: one-year prediction from discharge information sits
+at a C-index of about 0.69, and relaxing the Cox assumptions did not improve discrimination
+or accuracy by any margin this test set can detect. This follows from Figure~5 --- the models predict alike where
 the patients are, and the tails where they differ hold too few patients to move an average.
 The next two sections test both halves of that claim.
 
 \subsection{Do the four models rank the same patients as high-risk?}
 
 A shared C-index could mean agreement on the ranking or offsetting differences. Table~11
-shows agreement: Cox, DeepSurv and Cox-Time correlate at 0.97 or above and share 87--89\% of
+shows agreement: Cox, DeepSurv and Cox-Time correlate at 0.976 or above and share 87--89\% of
 their own top-risk quintile, while the forest correlates at 0.88--0.91 and shares only
 71--78\%. Figure~7 shows the cost. Cox risk tertiles give one-year survival of 0.892, 0.778
 and 0.550, with bands apart throughout the follow-up. Forest tertiles match on the low
 tertile (0.908) but compress the other two, 0.691 against 0.618, with overlapping bands.
 Patients the forest calls mid risk and high risk have similar outcomes where the Cox model
-separates them cleanly --- the patient-level version of the discrimination gap in Table~10.
+separates the same two groups by 0.23 in one-year survival against 0.07 --- the patient-level
+version of the discrimination gap in Table~10.
 
 \subsection{Performance in clinically meaningful subgroups}
 
 Table~12 scores the models inside the regions where Figure~5 showed most disagreement,
 splitting at the training medians so the subgroups do not depend on test data. Discharge BUN
-does not overturn the ranking: Cox is best in both groups (0.714 and 0.636) and the forest
-worst (0.695 and 0.617), though DeepSurv and Cox-Time edge ahead on IBS in the high-BUN
-group (0.1437 against 0.1446), the only place a flexible model beats Cox on accuracy. Age
-does overturn it: the forest discriminates best among patients 76 and younger (0.701 against
-Cox's 0.666) and worst among the older (0.580 against 0.617). Only 62 of the 199 one-year
-deaths fall in the younger group, so that reversal rests on the thinnest slice of events and
-is most likely noise. Discharge BUN separated the models most in Figure~5 yet produces no
+does not overturn the discrimination ranking: Cox is best in both groups (0.714 and 0.636)
+and the forest worst (0.695 and 0.617). Prediction error is another matter --- Cox-Time has
+the lowest IBS in both BUN groups (0.0899 against Cox's 0.0901, and 0.1431 against 0.1446)
+and in three of the four subgroups, though every margin is a fraction of what separates the
+four models overall. Age does overturn the discrimination ranking: the forest discriminates
+best among patients 76 and younger (0.701 against Cox's 0.666), while among the older
+Cox-Time is narrowly ahead at 0.620 with Cox at 0.617 and the forest worst at 0.580. Only 62
+of the 199 one-year deaths fall in the younger group, so the forest's edge there rests on the
+thinnest slice of events and is most likely noise. Discharge BUN separated the models most in Figure~5 yet produces no
 reversal, which fits Section~6.4: the disagreement sits at values few patients reach, so a
 median split dilutes it.
 
@@ -451,22 +465,27 @@ $p$-value anywhere was 0.021, so the assumption still holds well enough.
 
 The flexible models found no non-linearity that the Cox model misses where the data are.
 They agree over the interquartile ranges and all put age first, and Cox, DeepSurv and
-Cox-Time rank individual test patients almost identically. Disagreement is confined to the
-sparse tails and reflects models running out of data. The forest is the exception: it ranks
-patients differently enough that the patients it calls mid risk and high risk have similar
-outcomes.
+Cox-Time rank individual test patients almost identically, correlating at 0.98 and sharing
+87--89\% of their top-risk quintile. Disagreement is confined to the sparse tails, where the
+forest flattens and the networks finish above the Cox extrapolation --- models running out of
+data rather than evidence of curvature. The forest is the exception on ranking (0.88--0.91),
+and that costs it: its risk tertiles separate mid from high risk by 0.07 in one-year survival
+where the Cox tertiles separate the same two groups by 0.23.
 
-No model is clearly best on the test set. Cox leads on Uno's C (0.696 against 0.691, 0.690
-and 0.681), Cox-Time on the integrated Brier score (0.1148 against 0.1150, 0.1152 and
-0.1169) and on calibration (0.020 against 0.034, 0.037 and 0.039). Every margin but the
-calibration one is smaller than 199 one-year deaths can resolve. All four are adequately
-calibrated at group level and the forest is consistently last, worst on discrimination in
-three of the four subgroups.
+No model is clearly best on the test set. Cox-Time has the highest Uno's C (0.697 against
+0.696, 0.691 and 0.681) and the lowest integrated Brier score (0.1142 against 0.1150, 0.1153
+and 0.1169), but the worst calibration (a mean absolute gap of 0.042 across deciles, against
+0.037 for Cox, 0.039 for the forest and 0.042 for DeepSurv). Its lead over Cox is 0.0008 on
+each of the first two, far smaller than 199 one-year deaths among 793 test patients can
+resolve, so the defensible reading is not a ranking: no flexible model beats the Cox model by
+a detectable margin, all four are adequately calibrated at group level, and the forest is the
+one consistently behind --- last on discrimination and accuracy and worst on discrimination
+in three of the four subgroups.
 
 RQ1 and RQ2 therefore get the same answer from every model: prediction from discharge
 information sits at a C-index of about 0.69, and relaxing linearity, additivity or
-proportional hazards buys no measurable discrimination or accuracy, with calibration the
-only place flexibility shows. RQ3 is the one question where model choice matters, and there
+proportional hazards buys no discrimination or accuracy this test set can detect --- and the
+two networks are the worst calibrated of the four. RQ3 is the one question where model choice matters, and there
 both approaches agree: the \dbun{} $\times$ discharge BUN interaction is real but leaves test
 performance untouched.
 
@@ -703,8 +722,8 @@ Model & Selected configuration & CV IBS & SE \\
 \midrule
 Cox (reference) & no tuning                                        & 0.1097 & 0.0030 \\
 RSF             & 500 trees, min leaf $=$ 50, max features $=$ 4   & 0.1116 & 0.0033 \\
-DeepSurv        & hidden [16], dropout 0.4, lr 0.001, 108 epochs   & 0.1093 & 0.0027 \\
-Cox-Time        & hidden [16], dropout 0.4, lr 0.01, 24 epochs     & 0.1113 & 0.0033 \\
+DeepSurv        & hidden [16], dropout 0.4, lr 0.001, 119 epochs   & 0.1096 & 0.0027 \\
+Cox-Time        & hidden [16], dropout 0.4, lr 0.01, 32 epochs     & 0.1105 & 0.0030 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -802,18 +821,18 @@ Covariate & Model & $S$ at low & $S$ at high & Drop over grid & Drop over IQR \\
 \midrule
 Age (years) & Cox      & 0.962 & 0.641 & 0.321 & 0.110 \\
             & RSF      & 0.924 & 0.627 & 0.297 & 0.118 \\
-            & DeepSurv & 0.944 & 0.594 & 0.350 & 0.108 \\
-            & Cox-Time & 0.959 & 0.683 & 0.276 & 0.092 \\
+            & DeepSurv & 0.945 & 0.584 & 0.361 & 0.105 \\
+            & Cox-Time & 0.946 & 0.633 & 0.313 & 0.114 \\
 \addlinespace
 RDW (\%)    & Cox      & 0.864 & 0.659 & 0.205 & 0.034 \\
             & RSF      & 0.904 & 0.801 & 0.103 & 0.057 \\
-            & DeepSurv & 0.887 & 0.719 & 0.168 & 0.045 \\
-            & Cox-Time & 0.906 & 0.688 & 0.218 & 0.040 \\
+            & DeepSurv & 0.891 & 0.709 & 0.183 & 0.044 \\
+            & Cox-Time & 0.885 & 0.677 & 0.208 & 0.043 \\
 \addlinespace
 BUN, discharge & Cox      & 0.876 & 0.298 & 0.577 & 0.064 \\
                & RSF      & 0.899 & 0.719 & 0.180 & 0.032 \\
-               & DeepSurv & 0.879 & 0.512 & 0.367 & 0.060 \\
-               & Cox-Time & 0.912 & 0.462 & 0.450 & 0.068 \\
+               & DeepSurv & 0.885 & 0.465 & 0.420 & 0.061 \\
+               & Cox-Time & 0.898 & 0.389 & 0.509 & 0.078 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -828,10 +847,10 @@ one-year risk on the test set.}
 \toprule
  & Cox & RSF & DeepSurv & Cox-Time \\
 \midrule
-Cox      & 1.000 & 0.884 & 0.974 & 0.971 \\
-RSF      & 0.884 & 1.000 & 0.905 & 0.884 \\
-DeepSurv & 0.974 & 0.905 & 1.000 & 0.971 \\
-Cox-Time & 0.971 & 0.884 & 0.971 & 1.000 \\
+Cox      & 1.000 & 0.884 & 0.976 & 0.976 \\
+RSF      & 0.884 & 1.000 & 0.911 & 0.908 \\
+DeepSurv & 0.976 & 0.911 & 1.000 & 0.980 \\
+Cox-Time & 0.976 & 0.908 & 0.980 & 1.000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -847,11 +866,11 @@ Cox-Time & 0.971 & 0.884 & 0.971 & 1.000 \\
 Model A & Model B & Shared of 159 & Shared \% & Jaccard \\
 \midrule
 Cox      & RSF      & 113 & 71.1 & 0.551 \\
-Cox      & DeepSurv & 140 & 88.1 & 0.787 \\
-Cox      & Cox-Time & 142 & 89.3 & 0.807 \\
+Cox      & DeepSurv & 141 & 88.7 & 0.797 \\
+Cox      & Cox-Time & 140 & 88.1 & 0.787 \\
 RSF      & DeepSurv & 124 & 78.0 & 0.639 \\
-RSF      & Cox-Time & 114 & 71.7 & 0.559 \\
-DeepSurv & Cox-Time & 139 & 87.4 & 0.777 \\
+RSF      & Cox-Time & 117 & 73.6 & 0.582 \\
+DeepSurv & Cox-Time & 138 & 86.8 & 0.767 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -867,17 +886,17 @@ number of test patients, ``deaths'' the number dying within 12 months.}
 \toprule
 Subgroup & Measure & $n$ (deaths) & Cox & RSF & DeepSurv & Cox-Time \\
 \midrule
-BUN $\le$ 28 mg/dL & Uno's C & 430 (81) & 0.7140 & 0.6946 & 0.7026 & 0.7013 \\
-                   & IBS     & 430 (81) & 0.0901 & 0.0933 & 0.0911 & 0.0904 \\
+BUN $\le$ 28 mg/dL & Uno's C & 430 (81) & 0.7140 & 0.6946 & 0.7018 & 0.7079 \\
+                   & IBS     & 430 (81) & 0.0901 & 0.0933 & 0.0910 & 0.0899 \\
 \addlinespace
-BUN $>$ 28 mg/dL   & Uno's C & 363 (118) & 0.6361 & 0.6173 & 0.6339 & 0.6286 \\
-                   & IBS     & 363 (118) & 0.1446 & 0.1449 & 0.1437 & 0.1437 \\
+BUN $>$ 28 mg/dL   & Uno's C & 363 (118) & 0.6361 & 0.6173 & 0.6346 & 0.6349 \\
+                   & IBS     & 363 (118) & 0.1446 & 0.1449 & 0.1441 & 0.1431 \\
 \addlinespace
-Age $\le$ 76 years & Uno's C & 406 (62) & 0.6663 & 0.7010 & 0.6740 & 0.6735 \\
-                   & IBS     & 406 (62) & 0.0787 & 0.0783 & 0.0787 & 0.0783 \\
+Age $\le$ 76 years & Uno's C & 406 (62) & 0.6663 & 0.7010 & 0.6785 & 0.6815 \\
+                   & IBS     & 406 (62) & 0.0787 & 0.0783 & 0.0786 & 0.0784 \\
 \addlinespace
-Age $>$ 76 years   & Uno's C & 387 (137) & 0.6172 & 0.5800 & 0.6075 & 0.6150 \\
-                   & IBS     & 387 (137) & 0.1532 & 0.1574 & 0.1535 & 0.1531 \\
+Age $>$ 76 years   & Uno's C & 387 (137) & 0.6172 & 0.5800 & 0.6085 & 0.6203 \\
+                   & IBS     & 387 (137) & 0.1532 & 0.1574 & 0.1538 & 0.1519 \\
 \bottomrule
 \end{tabular}
 \end{table}
