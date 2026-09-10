@@ -43,42 +43,76 @@ Data and Decision Sciences, Technion --- Spring 2026}
 %======================================================================
 \section{Introduction}
 
-This project builds on Project Assignments 1 and 2 using synthetic dataset 2. PA1 provided an exploratory analysis of the covariates, missingness, survival outcome, censoring, and Kaplan--Meier curves. PA2 then developed a Cox proportional hazards model, tested whether the change in BUN during admission added information beyond the discharge level, assessed the proportional hazards assumption, and compared the Cox model with a log-normal AFT model. Both models were fitted to the full dataset and evaluated using in-sample summaries. Their performance for previously unseen patients therefore remained unknown.
+This project continues Project Assignments 1 and 2 on synthetic dataset 2. PA1 was
+exploratory: covariates, missing values, the survival outcome and censoring, and
+Kaplan--Meier curves. PA2 selected a Cox proportional hazards model, tested whether the
+change in BUN over the admission adds information beyond the discharge level, checked
+proportional hazards, and compared the Cox model with a log-normal AFT model. Both fitted
+to the full dataset and reported in-sample summaries, so neither estimated how well
+survival can be predicted for a patient the model has not seen.
 
-The present analysis focuses on out-of-sample prediction. The data are split into 80\% training and 20\% test sets. The Cox model from PA2 is refitted on the training data and compared with three more flexible approaches: a random survival forest (RSF), DeepSurv, and Cox-Time. These models relax different assumptions of the Cox model, including linearity on the log-hazard scale, additivity of covariate effects, and constant hazard ratios over time. The comparison therefore addresses two questions: whether additional flexibility improves prediction, and which Cox model assumptions, if any, appear to limit performance.
-
+Here the data are split 80/20. The PA2 Cox model is refitted on the training set, and a
+random survival forest (RSF), DeepSurv and Cox-Time are fitted on the same patients and
+covariates. The three relax different subsets of the Cox model's assumptions --- linearity
+in the log hazard, additivity of covariate effects, and constant hazard ratios --- so the
+comparison asks not only whether flexibility helps but which assumption, if any, is
+binding. All figures and tables follow Section~7.
 
 %======================================================================
 \section{Data and preprocessing}
 
-Synthetic dataset 2 contains 3,961 patients admitted with acute decompensated heart failure who were discharged alive. Each patient is described by 25 covariates, including demographics, nine comorbidity indicators, admission and discharge laboratory measurements, and length of stay (\tabref{tab:covariates}).
+Each of the 3,961 rows of synthetic dataset 2 is a patient admitted with acute
+decompensated heart failure who left hospital alive, described by 25 covariates:
+demographics, nine comorbidity indicators, the admission and discharge laboratory panels,
+and the length of stay (\tabref{tab:covariates}).
 
-The event of interest is death from any cause, with survival time measured in months from discharge. Follow-up ends administratively at 36 months, so patients who remain alive at that point are right-censored. Of the 2,282 censored patients, 1,473 reach the 36-month cutoff, while 809 are censored earlier, with a median censoring time of 16.5 months. Censoring is assumed to be independent of survival time conditional on the covariates. Median follow-up is 25.6 months (IQR 8.8--36.0). By the one-year prediction horizon used throughout the analysis, 947 deaths have occurred and 328 patients have been censored (\tabref{tab:cohort}).
+The event is death from any cause and time is measured in months from discharge. Follow-up
+closes administratively at 36 months, so patients still alive are right-censored there. Rather
+more than half the cohort is censored, most of it at that cutoff and the rest lost to follow-up
+earlier; censoring is assumed independent of survival time given the covariates. Median
+follow-up is a little over two years, and roughly a quarter of the cohort has died by the
+one-year horizon used throughout. \tabref{tab:cohort} gives the counts.
 
-Following PA1, missing values in continuous covariates were imputed using the median; no categorical covariates contained missing values. Following PA2, the nine comorbidity indicators were summarized as comorbidity burden and grouped into 0--1 (reference), 2--3, and 4+ comorbidities. In addition, \dbun{} $=$ BUN at discharge $-$ BUN on admission was constructed.
-
-The cohort is predominantly older and highly comorbid. Median age is 76 years, 46.5\% are women, 86.6\% have hypertension, and 62.7\% have ischaemic heart disease. Median BUN increases from 25,mg/dL on admission to 28,mg/dL at discharge.
-
+Following PA1, missing continuous values were replaced by medians; no categorical covariate
+had missing values. Following PA2, the nine comorbidity indicators were replaced by comorbidity
+burden --- their count, grouped 0--1 (reference), 2--3 and 4+ --- and \dbun{} $=$ BUN at
+discharge $-$ BUN on admission was constructed. The cohort is old and heavily comorbid: a median
+age in the mid-seventies, an even split by sex, hypertension in the large majority, impaired
+renal function on average, and BUN typically a little higher at discharge than on admission.
 
 %======================================================================
 \section{Brief recap of the previous analyses}
 
 \subsection{Project Assignment 1}
 
-The overall Kaplan--Meier curve (\figref{fig:km-overall}) declines to approximately 0.53 by 36 months, with the steepest drop occurring during the first few months. At one year, roughly three quarters of the cohort remain alive.
-
-Sex and diabetes show little separation in survival (\figref{fig:km-sex-dm}). One-year survival is 0.770 versus 0.733 between the two sex groups, and 0.740 versus 0.764 for patients with and without diabetes. In contrast, age and discharge BUN show clear differences when split at their medians (\figref{fig:km-age-bun}). One-year survival is 0.661 for patients older than 76 years compared with 0.844 for younger patients, and 0.676 for discharge BUN above 28,mg/dL compared with 0.810 below this threshold. The confidence bands remain clearly separated over follow-up.
+The overall Kaplan--Meier curve (\figref{fig:km-overall}) falls to about 0.53 at 36 months,
+most steeply over the first few months; roughly three quarters of the cohort are alive at one
+year. Sex and diabetes do not separate the cohort at all (\figref{fig:km-sex-dm}). Age and
+discharge BUN, split at their medians, do (\figref{fig:km-age-bun}): both open a gap of roughly
+0.15 in one-year survival and hold it for the whole three years, with confidence bands clear of
+each other throughout.
 
 \subsection{Project Assignment 2}
 
-PA2 selected a Cox proportional hazards model including sex, age, comorbidity burden, length of stay, discharge BUN, discharge creatinine and GFR, BNP, white blood cells, sodium, RDW, platelets, bilirubin, potassium, and \dbun{} (\tabref{tab:pa2cox}). The model achieved an in-sample concordance of 0.694.
+PA2 selected a Cox model on sex, age, comorbidity burden, length of stay, discharge BUN,
+discharge creatinine and GFR, BNP, white blood cells, sodium, RDW, platelets, bilirubin,
+potassium and \dbun{} (\tabref{tab:pa2cox}; in-sample concordance 0.694). Nine of the sixteen
+terms are significant. Age, discharge BUN and RDW carry the largest hazard ratios --- age alone
+multiplies the hazard by about half again per decade --- while sodium, potassium and \dbun{} act
+in the protective direction. Sex, comorbidity burden, white blood cells, discharge creatinine,
+discharge GFR and platelets are not associated with survival in any fit.
 
-Nine model terms were statistically significant. Higher age, discharge BUN, RDW, and BNP were associated with increased hazard, with hazard ratios of 1.044 per year, 1.021 per mg/dL, 1.120 per RDW unit, and 1.0002 per pg/mL, respectively. Sodium, potassium, and \dbun{} had hazard ratios below 1. Sex, comorbidity burden, white blood cells, discharge creatinine, discharge GFR, and platelets were not significant.
+\dbun{} does add information beyond the discharge level: a likelihood-ratio test against the
+model without it gave 27.63 on 1 degree of freedom, $p = 1.5 \times 10^{-7}$, so it is retained
+throughout. A Schoenfeld residual test on a rank transform of time flagged two of the sixteen
+terms, both only marginally, so PA2 read the violations as mild.
 
-\dbun{} added information beyond discharge BUN alone. A likelihood-ratio test comparing the full model with a model excluding \dbun{} gave $\chi^2 = 27.63$ on 1 degree of freedom, with $p = 1.5 \times 10^{-7}$. It was therefore retained in all subsequent models. A Schoenfeld residual test using a rank transformation of time identified two of sixteen terms as potentially violating proportional hazards: discharge BUN ($p=0.036$) and length of stay ($p=0.048$). Because both results were marginal, PA2 treated the violations as mild.
-
-A log-normal AFT model fitted to the same covariates produced effects in the same direction as the Cox model. One-year predictions from the two models (\figref{fig:cox-aft}) are nearly identical across age, show somewhat greater separation for RDW, and differ most for discharge BUN. For BUN, the AFT prediction decreases more rapidly in the middle of the observed range before crossing above the Cox prediction in the upper tail. The original figure extends BUN to its observed maximum of 236,mg/dL, although 75% of patients have values below 39,mg/dL. For this reason, percentile-based grids are used from Section~6.2 onward.
-
+A log-normal AFT model on the same covariates agreed on direction throughout. Its one-year
+predictions (\figref{fig:cox-aft}) are almost identical to the Cox model's for age, separate
+slightly for RDW, and differ most for discharge BUN, where the AFT curve falls faster in
+mid-range and then crosses above in the tail. That figure sweeps BUN across its full observed
+range, in which three quarters of patients occupy only the lowest fifth --- which is why
+percentile grids are used from Section~6.2 onwards.
 
 %======================================================================
 \section{Research questions}
@@ -139,13 +173,12 @@ the individual indicators, which no question requires.
 
 \subsection{Train--test split}
 
-The data were split once, 80/20, with the seed fixed at 42. That seed is set once and
-governs every random step: the split, the cross-validation folds, the forest's bootstrap
-samples and feature sampling, and both networks' initialisation and batching. The split is
-stratified by the event indicator, so both sets carry the same event rate (\tabref{tab:split}): 3,168
-training patients with 1,343 events and 793 test patients with 336. The test set is
-untouched until Section~6.4 and used once. Its 199 one-year deaths bound how finely it can
-distinguish between models.
+The data were split once, 80/20, with the seed fixed at 42. That seed is set once and governs
+every random step: the split, the cross-validation folds, the forest's bootstrap samples and
+feature sampling, and both networks' initialisation and batching. The split is stratified by the
+event indicator, so both sets carry the same event rate (\tabref{tab:split}). The training set is
+used for all fitting and tuning; the test set is untouched until Section~6.4 and used once. It
+holds 199 one-year deaths, and that number bounds how finely it can distinguish between models.
 
 \subsection{The Cox model and one-year prediction}
 
@@ -158,13 +191,12 @@ with $\hat S_0$ the Breslow baseline and $\bar X$ the training covariate means;
 $\hat S_0(12) = 0.790$ is therefore the prediction at those means, not at zero.
 
 Prediction plots hold all covariates but one at representative training values: medians for
-continuous covariates and the most common level for comorbidity burden. Sex is the only
-binary covariate and its median coincides with its most common category, so medians
-throughout give the representative patient --- a man of 76 with two or three comorbidities,
-discharge BUN 28\,mg/dL, RDW 15.3\% and a five-day stay --- whose predicted one-year
-survival is 0.821. Grids run from the 1st to the 99th training percentile: discharge BUN
-reaches 199.7\,mg/dL while its upper quartile is 38, so a full-range axis would be mostly
-empty. The same grids and representative patient are reused in Section~6.3.
+continuous covariates and the most common level for comorbidity burden. Sex is the only binary
+covariate and its median coincides with its most common category, so medians throughout give the
+representative patient --- a man of 76 with two or three comorbidities and otherwise median
+labs --- whose predicted one-year survival is 0.821. Grids run from the 1st to the 99th training
+percentile rather than the full range, since the skewed covariates would otherwise leave most of
+the axis empty. The same grids and representative patient are reused in Section~6.3.
 
 \subsection{The three additional models}
 
@@ -215,11 +247,10 @@ training patients. Epochs were not tuned: 20\% of each fold's fitting data was h
 early stopping, and the final networks trained on all training patients for the average
 best-epoch count.
 
-\tabref{tab:hyper} gives the selections. Both networks took the smallest architecture on offer with the
-higher dropout rate, and the forest the largest leaf size and most restrictive feature
+\tabref{tab:hyper} gives the selections. Both networks took the smallest architecture on offer
+with the higher dropout rate, and the forest the largest leaf size and most restrictive feature
 sampling: every search moved to the least flexible end of its grid, which anticipates the
-test-set result. All four cross-validated scores lie within 0.0020 of one another, inside
-the standard errors of about 0.003.
+test-set result. All four cross-validated scores fall within one standard error of one another.
 
 \subsection{Evaluation measures}
 
@@ -237,20 +268,25 @@ over the IPCW Brier score, approximated by the trapezoidal rule on months 1 to 1
 with $\widehat{BS}(0) = 0$, which is exact since every patient is alive at discharge and
 every model predicts $S(0) = 1$.
 
+\subsection{Implementation}
 
+Python 3, seed 42. lifelines 0.30.3 (Cox and AFT models, Kaplan--Meier, Schoenfeld test);
+scikit-survival 0.28.0 (random survival forest, Uno's C-index, IPCW Brier score); pycox
+0.3.0 on torch 2.5.1 with torchtuples 0.2.2 (DeepSurv, Cox-Time); scikit-learn 1.9.0 (split,
+folds, standardisation); numpy 2.0.2, pandas 2.3.3, scipy 1.17.1, statsmodels 0.15.0 and
+matplotlib 3.11.1.
 
 %======================================================================
 \section{Results}
 
 \subsection{The refitted Cox model and its assumptions}
 
-\tabref{tab:coxtrain} refits the PA2 model on the training patients. The estimates are stable: no hazard
-ratio moves by more than 2.2\%, every full-data estimate falls inside the training
-confidence interval, and concordance is 0.699 against 0.694. Bilirubin and potassium lose
-significance (0.037 to 0.126 and 0.038 to 0.078) but their hazard ratios barely move (1.121
-to 1.099 and 0.914 to 0.920); the intervals widened on 20\% less data, and both terms were
-marginal already. The seven remaining significant terms are essentially unchanged, so PA2's
-conclusions hold.
+\tabref{tab:coxtrain} refits the PA2 model on the training patients, and the estimates are
+stable: no hazard ratio moves by more than 2.2\%, every full-data estimate falls inside the
+corresponding training confidence interval, and concordance is essentially unchanged. Bilirubin
+and potassium lose significance, but their hazard ratios barely move; what changed is the width
+of the intervals once a fifth of the data was set aside, and both terms were marginal already.
+The seven remaining significant terms are essentially unchanged, so PA2's conclusions hold.
 
 \dbun{} needs one clarification, since a hazard ratio below 1 reads as if a rise in BUN
 during the stay were protective. With the discharge level also in the model, \dbun{}'s
@@ -258,55 +294,53 @@ coefficient is minus the effect of the admission level at a fixed discharge leve
 mg/dL of rise says the same as 1.010 per mg/dL of admission BUN. Of two patients leaving
 with the same BUN, the one who started higher does worse.
 
-The Schoenfeld test gives a different answer on the training data (\tabref{tab:ph}). Discharge BUN
-and length of stay rise to 0.116 and 0.137, while both comorbidity burden levels and
-bilirubin fall below 0.05; no covariate is flagged in both fits. Since the training set is
-four fifths of the cohort, a genuinely time-varying hazard ratio would still show up in the
-subset, so flags that swap are noise --- the smallest $p$-value in either fit is 0.021,
-unremarkable among sixteen tests. The residual smoothers are flat throughout (\figref{fig:schoenfeld}).
-Proportional hazards is an adequate approximation and the hazard ratios describe average
-effects over follow-up.
+The Schoenfeld test gives a different answer on the training data (\tabref{tab:ph}): the two
+terms flagged on the full data are no longer flagged, and three others fall below 0.05 instead,
+with no covariate flagged in both fits. Since the training set is four fifths of the cohort, a
+genuinely time-varying hazard ratio would still show up in the subset, so flags that swap are
+noise --- and no $p$-value anywhere in either fit falls below 0.02, which is unremarkable among
+sixteen simultaneous tests. The residual smoothers are flat throughout
+(\figref{fig:schoenfeld}). Proportional hazards is an adequate approximation and the hazard
+ratios describe average effects over follow-up.
 
 \subsection{One-year prediction from the refitted Cox model}
 
-\figref{fig:cox-oneyear} and \tabref{tab:coxpred} give predicted one-year survival against age, RDW and discharge BUN.
-Which covariate matters most depends on the range. Across the plotted grid discharge BUN
-moves the prediction furthest, from 0.876 at 11\,mg/dL to 0.298 at 105, then age (0.962 to
-0.641) and RDW (0.864 to 0.659). Over the interquartile range the order reverses: age 0.11,
-discharge BUN 0.06, RDW 0.03. Age therefore separates predictions most for a typical
-patient, while discharge BUN dominates the grid because of its long right tail and matters
-most for the minority discharged high. All three curves decline monotonically and flatten,
-which is a property of the linear predictor rather than a finding, and is the shape the next
-section tests.
+\figref{fig:cox-oneyear} and \tabref{tab:coxpred} give predicted one-year survival against age,
+RDW and discharge BUN. Which covariate matters most depends on the range over which the question
+is asked. Across the plotted grid discharge BUN moves the prediction furthest, then age, then
+RDW; over the interquartile range the order reverses, with age separating predictions about twice
+as much as discharge BUN and three times as much as RDW. Age therefore matters most for a typical
+patient, while discharge BUN dominates the grid because of its long right tail and matters most
+for the minority discharged high. All three curves decline monotonically and flatten, which is a
+property of the linear predictor rather than a finding, and is the shape the next section tests.
 
 \subsection{Do the flexible models see the covariates differently? (RQ2)}
 
-\figref{fig:model-curves} overlays all four models on the grids of Section~6.2 and \tabref{tab:modelcurves} quantifies them.
-Over the interquartile range they agree: age moves predicted one-year survival by 0.10 to
-0.12, discharge BUN by 0.03 to 0.08 and RDW by 0.03 to 0.06, and all four put age first.
-Only the forest reorders the other two, ranking RDW above discharge BUN.
+\figref{fig:model-curves} overlays all four models on the grids of Section~6.2, and over the
+interquartile range they agree closely: each moves predicted survival by a similar amount for
+each covariate, and all four put age first (\tabref{tab:modelcurves}). Only the forest reorders
+the other two, ranking RDW above discharge BUN.
 
-They part company in the tails. Across the plotted BUN range Cox falls to 0.298, Cox-Time to
-0.389, DeepSurv to 0.465 and the forest to 0.719. Cox extrapolates its log-hazard slope
-wherever the grid goes; DeepSurv follows it to about 40\,mg/dL and then bends upwards, while
-Cox-Time runs a little below it from 40 to about 85\,mg/dL before crossing back above; the
-forest flattens above about 75\,mg/dL, where only 141 of the 3,168 training patients sit and
-a leaf of 50 leaves no split to make. That plateau is the forest running out of data, not
-evidence that risk stops rising. RDW repeats the pattern mildly and age agrees best,
-separating only past 85 years. So the flexible models find no non-linearity that the Cox
-model misses where patients actually are; their disagreement is confined to the sparse
-tails, and at the far end of every grid all three finish above the linear extrapolation.
+They part company in the tails, and discharge BUN is the clearest case: at the top of the
+plotted range the Cox curve has fallen to about 0.30 while the forest is still above 0.70, the
+two networks in between. Cox extrapolates its log-hazard slope wherever the grid goes; DeepSurv
+follows it to about 40\,mg/dL and then bends upwards, while Cox-Time runs a little below it
+through the middle of the range before crossing back above; the forest flattens above about
+75\,mg/dL, where only some 4\% of training patients sit and a leaf of 50 leaves no split to make.
+That plateau is the forest running out of data, not evidence that risk stops rising. RDW repeats
+the pattern mildly and age agrees best, separating only past 85 years. So the flexible models
+find no non-linearity that the Cox model misses where patients actually are; their disagreement
+is confined to the sparse tails, and at the far end of every grid all three finish above the
+linear extrapolation.
 
 \subsection{Test-set model comparison (RQ1)}
 
-The 793 test patients are used here for the first time. Mean predicted one-year survival is
-nearly identical across models (0.748, 0.751, 0.744 and 0.744 for Cox, the forest, DeepSurv
-and Cox-Time) but the spread is not: the forest has standard deviation 0.118 and never
-predicts below 0.441, while Cox has 0.161 and sends two patients essentially to zero ---
-those with discharge BUN of 137 and 236\,mg/dL, the second beyond the training maximum of
-199.7. DeepSurv reaches 0.002 at its own minimum and Cox-Time stops at 0.106. These are the
-tails of \figref{fig:model-curves} from the other side: the forest cannot leave the
-range its leaves cover, and Cox extrapolates without limit.
+The 793 test patients are used here for the first time. All four models predict nearly the same
+average one-year survival, but not the same spread: the forest is much the most compressed and
+never predicts below 0.44, while Cox has the widest range and sends two patients --- both with
+extreme discharge BUN, one beyond the training maximum --- essentially to zero. These are the
+tails of \figref{fig:model-curves} from the other side: the forest cannot leave the range its
+leaves cover, and Cox extrapolates without limit.
 
 \setcounter{table}{9}   % this inline table is Table 10; back matter resumes at 1
 \begin{table}[H]
@@ -330,89 +364,83 @@ Cox-Time & 0.6967 & 0.1142 & 0.0422 \\
 \end{tabular}
 \end{table}
 
-Uno's C spans 0.016 (Cox-Time 0.697, Cox 0.696, DeepSurv 0.691, RSF 0.681) and the
-integrated Brier score 0.0027 (Cox-Time 0.1142, Cox 0.1150, DeepSurv 0.1153, RSF 0.1169).
-Cox-Time leads Cox by 0.0008 on each, twenty times smaller than the spread across the four
-models; with only 199 one-year deaths behind them neither ordering should be read as a
-ranking, and what they support is that Cox, Cox-Time and DeepSurv discriminate and predict
-equally well while only the forest is behind. Test
-IBS sits slightly above the cross-validated values of \tabref{tab:hyper}, as expected on unseen
-patients.
+All four models cluster near a C-index of 0.69 and an integrated Brier score of about 0.115
+(\tabref{tab:testperf}). Cox-Time edges Cox on both, but by 0.0008 in each case --- twenty times
+smaller than the spread across the four models, and far inside what 199 one-year deaths can
+resolve. The ordering should not be read as a ranking; what the numbers support is that Cox,
+Cox-Time and DeepSurv discriminate and predict equally well, while only the forest is behind.
+Test scores sit slightly above the cross-validated values of \tabref{tab:hyper}, as expected on
+unseen patients.
 
-Calibration (\figref{fig:calibration}) plots each decile's mean prediction against its Kaplan--Meier
-survival. Deciles hold about 80 patients, so the intervals are roughly 0.2 wide. Cox is the
-best calibrated at a mean gap of 0.037, though it misses at its bottom end, predicting 0.400
-and 0.591 for its two lowest deciles against 0.492 and 0.485 observed --- separating two
-groups the test data does not separate at all. DeepSurv has the single largest miss in the
-figure, 0.657 predicted against 0.496 observed in its third decile. Cox-Time scatters around
-the diagonal instead of missing at one point, its fourth decile 0.098 too optimistic, its
-fifth 0.065 too pessimistic and its seventh 0.066 too optimistic, which leaves it last on the
-summary measure without any single catastrophic decile. The forest is no longer worst on that
-measure but is the one that misses structurally: its decile means span only 0.538 to 0.912
-against 0.400 to 0.933 for Cox, with the middle deciles below the diagonal (0.700 against
-0.611 observed, 0.747 against 0.675) and the healthiest above it (0.912 against 0.950), so it
-is insufficiently confident about both good and bad prognoses.
+Calibration (\figref{fig:calibration}) plots each decile's mean prediction against its
+Kaplan--Meier survival; with about 80 patients per decile the intervals are roughly 0.2 wide, so
+a single point off the diagonal means little. Cox is the best calibrated on the summary measure,
+though it misses at its bottom end, separating two low-survival deciles that the test data does
+not separate at all. DeepSurv has the single largest miss in the figure. Cox-Time scatters around
+the diagonal rather than missing at one point, which is what leaves it last on the summary
+measure without any single catastrophic decile. The forest is the one that misses structurally:
+its decile means span a visibly narrower range than the observed values, sitting below the
+diagonal through the middle and above it at the healthy end, so it is insufficiently confident
+about both good and bad prognoses.
 
 No model wins on all three measures: Cox-Time leads on the C-index and IBS but is the worst
 calibrated, Cox is the best calibrated and second on the other two, and the forest is last on
-discrimination and accuracy. Cox-Time's margins over Cox are 0.0008 on each, far inside what
-199 one-year deaths among 793 patients can resolve, and the calibration spread across all
-four models is only 0.006. For RQ1, then: one-year prediction from discharge information sits
-at a C-index of about 0.69, and relaxing the Cox assumptions did not improve discrimination
-or accuracy by any margin this test set can detect. This follows from \figref{fig:model-curves} --- the models predict alike where
-the patients are, and the tails where they differ hold too few patients to move an average.
-The next two sections test both halves of that claim.
+discrimination and accuracy. Every margin is small --- the calibration gaps span 0.006 across the
+four models --- so for RQ1: one-year prediction from discharge information sits at a C-index of
+about 0.69, and relaxing the Cox assumptions did not improve discrimination or accuracy by any
+margin this test set can detect. This follows from \figref{fig:model-curves} --- the models
+predict alike where the patients are, and the tails where they differ hold too few patients to
+move an average. The next two sections test both halves of that claim.
 
 \subsection{Do the four models rank the same patients as high-risk?}
 
-A shared C-index could mean agreement on the ranking or offsetting differences. \tabref{tab:risk}
-shows agreement: Cox, DeepSurv and Cox-Time correlate at 0.976 or above and share 87--89\% of
-their own top-risk quintile, while the forest correlates at 0.88--0.91 and shares only
-71--78\%. \figref{fig:risk-tertiles} shows the cost. Cox risk tertiles give one-year survival of 0.892, 0.778
-and 0.550, with bands apart throughout the follow-up. Forest tertiles match on the low
-tertile (0.908) but compress the other two, 0.691 against 0.618, with overlapping bands.
-Patients the forest calls mid risk and high risk have similar outcomes where the Cox model
-separates the same two groups by 0.23 in one-year survival against 0.07 --- the patient-level
-version of the discrimination gap in \tabref{tab:testperf}.
+A shared C-index could mean agreement on the ranking or offsetting differences.
+\tabref{tab:risk} shows agreement: Cox, DeepSurv and Cox-Time correlate above 0.97 and share
+roughly seven eighths of their own top-risk quintile, while the forest correlates around 0.89 and
+shares closer to three quarters. \figref{fig:risk-tertiles} shows the cost. Cox risk tertiles give
+one-year survival of 0.89, 0.78 and 0.55, with bands apart throughout the follow-up. Forest
+tertiles match on the low tertile but compress the other two into a gap of under 0.08, with
+overlapping bands. Patients the forest calls mid risk and high risk have similar outcomes where
+the Cox model separates the same two groups by 0.23 --- the patient-level version of the
+discrimination gap in \tabref{tab:testperf}.
 
 \subsection{Performance in clinically meaningful subgroups}
 
-\tabref{tab:subgroup} scores the models inside the regions where \figref{fig:model-curves} showed most disagreement,
-splitting at the training medians so the subgroups do not depend on test data. Discharge BUN
-does not overturn the discrimination ranking: Cox is best in both groups (0.714 and 0.636)
-and the forest worst (0.695 and 0.617). Prediction error is another matter --- Cox-Time has
-the lowest IBS in both BUN groups (0.0899 against Cox's 0.0901, and 0.1431 against 0.1446)
-and in three of the four subgroups, though every margin is a fraction of what separates the
-four models overall. Age does overturn the discrimination ranking: the forest discriminates
-best among patients 76 and younger (0.701 against Cox's 0.666), while among the older
-Cox-Time is narrowly ahead at 0.620 with Cox at 0.617 and the forest worst at 0.580. Only 62
-of the 199 one-year deaths fall in the younger group, so the forest's edge there rests on the
-thinnest slice of events and is most likely noise. Discharge BUN separated the models most in \figref{fig:model-curves} yet produces no
-reversal, which fits Section~6.4: the disagreement sits at values few patients reach, so a
-median split dilutes it.
+\tabref{tab:subgroup} scores the models inside the regions where \figref{fig:model-curves}
+showed most disagreement, splitting at the training medians so the subgroups do not depend on
+test data. Discharge BUN does not overturn the discrimination ranking: Cox is best in both groups
+and the forest worst. Prediction error is another matter --- Cox-Time has the lowest IBS in both
+BUN groups and in three of the four subgroups, though every margin is a fraction of what
+separates the four models overall. Age does overturn the discrimination ranking: the forest
+discriminates best among patients 76 and younger, while among the older Cox-Time is narrowly
+ahead of Cox and the forest is clearly worst. Only 62 of the 199 one-year deaths fall in the
+younger group, so the forest's edge there rests on the thinnest slice of events in the table and
+is most likely noise. Discharge BUN separated the models most in \figref{fig:model-curves} yet
+produces no reversal, which fits Section~6.4: the disagreement sits at values few patients reach,
+so a median split dilutes it.
 
 \subsection{The two pre-specified interactions (RQ3)}
 
-Only a parametric model yields a testable interaction term; the forest and the networks
-absorb interactions inside an ensemble or a hidden layer, so RQ3 is tested on the Cox model
-alone. \dbun{} $\times$ discharge BUN is significant at the pre-specified 0.025 threshold
-(likelihood ratio 5.85 on 1 degree of freedom, $p = 0.016$; Wald $p = 0.012$), while age
-$\times$ discharge BUN is not (0.29, $p = 0.59$; \tabref{tab:interactions}). The hazard ratio of 1.0001 is
-small only because it multiplies a product running into the thousands. Adding the term shifts
-\dbun{} from 0.990 to 0.984, but with uncentred covariates a main effect is now conditional
-on the other interacting covariate being zero, so that is not comparable with \tabref{tab:coxtrain}.
-Neither interaction changes training concordance beyond the third decimal.
+Only a parametric model yields a testable interaction term; the forest and the networks absorb
+interactions inside an ensemble or a hidden layer, so RQ3 is tested on the Cox model alone.
+\dbun{} $\times$ discharge BUN is significant at the pre-specified 0.025 threshold (likelihood
+ratio 5.85 on 1 degree of freedom, $p = 0.016$), while age $\times$ discharge BUN is nowhere near
+it (\tabref{tab:interactions}). The significant term's hazard ratio looks negligible only because
+it multiplies a product running into the thousands. Adding it shifts \dbun{}'s main effect, but
+with uncentred covariates a main effect is now conditional on the other interacting covariate
+being zero, so that is not comparable with \tabref{tab:coxtrain}. Neither interaction changes
+training concordance beyond the third decimal.
 
-\figref{fig:interactions} shows why the two differ. The three curves in the left panel are not parallel: where
-BUN fell during the stay the discharge level spreads predictions by 0.067, where it rose by
-only 0.045, so the effect of the change depends on the level reached. In the right panel the
-age curves stay near-parallel; the widening at high BUN is what an additive
-proportional-hazards model does anyway once a linear log hazard becomes a bounded
-probability, and the likelihood-ratio test is what separates the two cases.
+\figref{fig:interactions} shows why the two differ. The three curves in the left panel are not
+parallel: the discharge level spreads the predictions appreciably more where BUN fell during the
+stay than where it rose, so the effect of the change depends on the level reached. In the right
+panel the age curves stay near-parallel; the widening at high BUN is what an additive
+proportional-hazards model does anyway once a linear log hazard becomes a bounded probability, and
+the likelihood-ratio test is what separates the two cases.
 
-A significant term need not be a useful one. In \tabref{tab:interperf} the BUN interaction lowers test
-Uno's C from 0.696 to 0.693 and leaves test IBS unchanged to three decimals, while
-cross-validated IBS moves from 0.1097 to 0.1094, a fraction of the 0.0030 standard error.
+A significant term need not be a useful one. In \tabref{tab:interperf} the BUN interaction
+slightly lowers test discrimination and leaves test IBS unchanged to three decimals, while the
+cross-validated IBS moves the other way by a small fraction of the fold-to-fold standard error.
 The interaction is real but does not improve prediction --- the explicit version of what the
 flexible models showed by gaining nothing from being free to fit it. The age interaction is
 neither real nor useful.
@@ -420,42 +448,41 @@ neither real nor useful.
 %======================================================================
 \section{Discussion}
 
-Seven terms carry the model (\tabref{tab:coxtrain}): age, discharge BUN, RDW, BNP and length of stay raise
-the hazard, while sodium and \dbun{} lower it, \dbun{} being the admission level read
+Seven terms carry the model (\tabref{tab:coxtrain}): age, discharge BUN, RDW, BNP and length of
+stay raise the hazard, while sodium and \dbun{} lower it, \dbun{} being the admission level read
 backwards. Sex, comorbidity burden, white blood cells, platelets, discharge creatinine and
-discharge GFR are unassociated in every fit. Over the range patients occupy, age separates
-predictions most, by 0.11 across its interquartile range against 0.06 for discharge BUN and
-0.03 for RDW.
+discharge GFR are unassociated in every fit. Over the range patients actually occupy age
+separates predictions most, roughly twice as much as discharge BUN and three times as much as
+RDW.
 
 The Cox conclusions were stable under the training fit: no hazard ratio moved by more than
-2.2\%, every full-data estimate fell inside the training interval, and only two marginal
-terms lost significance, through wider intervals rather than changed effects. The
-proportional hazards flags moved but no covariate was flagged in both fits, and the smallest
-$p$-value anywhere was 0.021, so the assumption still holds well enough.
+2.2\%, every full-data estimate fell inside the training interval, and only two marginal terms
+lost significance, through wider intervals rather than changed effects. The proportional hazards
+flags moved but no covariate was flagged in both fits, and no $p$-value anywhere fell below 0.02,
+so the assumption still holds well enough.
 
-The flexible models found no non-linearity that the Cox model misses where the data are.
-They agree over the interquartile ranges and all put age first, and Cox, DeepSurv and
-Cox-Time rank individual test patients almost identically, correlating at 0.98 and sharing
-87--89\% of their top-risk quintile. Disagreement is confined to the sparse tails, where the
-forest flattens and the networks finish above the Cox extrapolation --- models running out of
-data rather than evidence of curvature. The forest is the exception on ranking (0.88--0.91),
-and that costs it: its risk tertiles separate mid from high risk by 0.07 in one-year survival
-where the Cox tertiles separate the same two groups by 0.23.
+The flexible models found no non-linearity that the Cox model misses where the data are. They
+agree over the interquartile ranges and all put age first, and Cox, DeepSurv and Cox-Time rank
+individual test patients almost identically, correlating above 0.97 and sharing most of their
+top-risk quintile. Disagreement is confined to the sparse tails, where the forest flattens and
+the networks finish above the Cox extrapolation --- models running out of data rather than
+evidence of curvature. The forest is the exception on ranking, and that costs it: its risk
+tertiles separate mid from high risk by under 0.08 in one-year survival where the Cox tertiles
+separate the same two groups by 0.23.
 
-No model is clearly best on the test set. Cox-Time has the highest Uno's C (0.697 against
-0.696, 0.691 and 0.681) and the lowest integrated Brier score (0.1142 against 0.1150, 0.1153
-and 0.1169), but the worst calibration (a mean absolute gap of 0.042 across deciles, against
-0.037 for Cox, 0.039 for the forest and 0.042 for DeepSurv). Its lead over Cox is 0.0008 on
-each of the first two, far smaller than 199 one-year deaths among 793 test patients can
-resolve, so the defensible reading is not a ranking: no flexible model beats the Cox model by
-a detectable margin, all four are adequately calibrated at group level, and the forest is the
-one consistently behind --- last on discrimination and accuracy and worst on discrimination
-in three of the four subgroups.
+No model is clearly best on the test set. Cox-Time has the highest Uno's C and the lowest
+integrated Brier score but the worst calibration; Cox is the best calibrated and a close second
+on the other two; the forest is last on discrimination and accuracy (\tabref{tab:testperf}).
+Cox-Time's lead over Cox is 0.0008 on each of the first two, far smaller than 199 one-year deaths
+among 793 test patients can resolve, so the defensible reading is not a ranking: no flexible
+model beats the Cox model by a detectable margin, all four are adequately calibrated at group
+level, and the forest is the one consistently behind --- worst on discrimination in three of the
+four subgroups.
 
 RQ1 and RQ2 therefore get the same answer from every model: prediction from discharge
-information sits at a C-index of about 0.69, and relaxing linearity, additivity or
-proportional hazards buys no discrimination or accuracy this test set can detect --- and the
-two networks are the worst calibrated of the four. RQ3 is the one question where model choice matters, and there
+information sits at a C-index of about 0.69, and relaxing linearity, additivity or proportional
+hazards buys no discrimination or accuracy this test set can detect --- and the two networks are
+the worst calibrated of the four. RQ3 is the one question where model choice matters, and there
 both approaches agree: the \dbun{} $\times$ discharge BUN interaction is real but leaves test
 performance untouched.
 
