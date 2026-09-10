@@ -43,76 +43,42 @@ Data and Decision Sciences, Technion --- Spring 2026}
 %======================================================================
 \section{Introduction}
 
-This project continues Project Assignments 1 and 2 on synthetic dataset 2. PA1 was
-exploratory: covariates, missing values, the survival outcome and censoring, and
-Kaplan--Meier curves. PA2 selected a Cox proportional hazards model, tested whether the
-change in BUN over the admission adds information beyond the discharge level, checked
-proportional hazards, and compared the Cox model with a log-normal AFT model. Both fitted
-to the full dataset and reported in-sample summaries, so neither estimated how well
-survival can be predicted for a patient the model has not seen.
+This project builds on Project Assignments 1 and 2 using synthetic dataset 2. PA1 provided an exploratory analysis of the covariates, missingness, survival outcome, censoring, and Kaplan--Meier curves. PA2 then developed a Cox proportional hazards model, tested whether the change in BUN during admission added information beyond the discharge level, assessed the proportional hazards assumption, and compared the Cox model with a log-normal AFT model. Both models were fitted to the full dataset and evaluated using in-sample summaries. Their performance for previously unseen patients therefore remained unknown.
 
-Here the data are split 80/20. The PA2 Cox model is refitted on the training set, and a
-random survival forest (RSF), DeepSurv and Cox-Time are fitted on the same patients and
-covariates. The three relax different subsets of the Cox model's assumptions --- linearity
-in the log hazard, additivity of covariate effects, and constant hazard ratios --- so the
-comparison asks not only whether flexibility helps but which assumption, if any, is
-binding. All figures and tables follow Section~7.
+The present analysis focuses on out-of-sample prediction. The data are split into 80\% training and 20\% test sets. The Cox model from PA2 is refitted on the training data and compared with three more flexible approaches: a random survival forest (RSF), DeepSurv, and Cox-Time. These models relax different assumptions of the Cox model, including linearity on the log-hazard scale, additivity of covariate effects, and constant hazard ratios over time. The comparison therefore addresses two questions: whether additional flexibility improves prediction, and which Cox model assumptions, if any, appear to limit performance.
+
 
 %======================================================================
 \section{Data and preprocessing}
 
-Each of the 3,961 rows of synthetic dataset 2 is a patient admitted with acute
-decompensated heart failure who left hospital alive, described by 25 covariates:
-demographics, nine comorbidity indicators, the admission and discharge laboratory panels,
-and the length of stay (\tabref{tab:covariates}).
+Synthetic dataset 2 contains 3,961 patients admitted with acute decompensated heart failure who were discharged alive. Each patient is described by 25 covariates, including demographics, nine comorbidity indicators, admission and discharge laboratory measurements, and length of stay (\tabref{tab:covariates}).
 
-The event is death from any cause and time is measured in months from discharge. Follow-up
-closes administratively at 36 months, so patients still alive are right-censored there. Of
-the 2,282 censored patients, 1,473 reach the cutoff and 809 are lost earlier, at a median
-of 16.5 months. Censoring is assumed independent of survival time given the covariates.
-Median follow-up is 25.6 months (IQR 8.8--36.0); by the one-year horizon used throughout,
-947 deaths have occurred and 328 patients have been censored (\tabref{tab:cohort}).
+The event of interest is death from any cause, with survival time measured in months from discharge. Follow-up ends administratively at 36 months, so patients who remain alive at that point are right-censored. Of the 2,282 censored patients, 1,473 reach the 36-month cutoff, while 809 are censored earlier, with a median censoring time of 16.5 months. Censoring is assumed to be independent of survival time conditional on the covariates. Median follow-up is 25.6 months (IQR 8.8--36.0). By the one-year prediction horizon used throughout the analysis, 947 deaths have occurred and 328 patients have been censored (\tabref{tab:cohort}).
 
-Following PA1, missing continuous values were replaced by medians; no categorical covariate
-had missing values. Following PA2, the nine comorbidity indicators were replaced by
-comorbidity burden --- their count, grouped 0--1 (reference), 2--3 and 4+ --- and
-\dbun{} $=$ BUN at discharge $-$ BUN on admission was constructed. The cohort is old and
-comorbid: median age 76, 46.5\% women, hypertension in 86.6\% and ischaemic heart disease
-in 62.7\%, with median BUN rising from 25\,mg/dL on admission to 28 at discharge.
+Following PA1, missing values in continuous covariates were imputed using the median; no categorical covariates contained missing values. Following PA2, the nine comorbidity indicators were summarized as comorbidity burden and grouped into 0--1 (reference), 2--3, and 4+ comorbidities. In addition, \dbun{} $=$ BUN at discharge $-$ BUN on admission was constructed.
+
+The cohort is predominantly older and highly comorbid. Median age is 76 years, 46.5\% are women, 86.6\% have hypertension, and 62.7\% have ischaemic heart disease. Median BUN increases from 25,mg/dL on admission to 28,mg/dL at discharge.
+
 
 %======================================================================
 \section{Brief recap of the previous analyses}
 
 \subsection{Project Assignment 1}
 
-The overall Kaplan--Meier curve (\figref{fig:km-overall}) falls to about 0.53 at 36 months, most steeply
-over the first few months; roughly three quarters of the cohort are alive at one year. Sex
-and diabetes do not separate the cohort (\figref{fig:km-sex-dm}): one-year survival is 0.770 against
-0.733 by sex and 0.740 against 0.764 by diabetes. Age and discharge BUN, split at their
-medians, do (\figref{fig:km-age-bun}): 0.661 above age 76 against 0.844 below, and 0.676 above
-28\,mg/dL against 0.810 below, with confidence bands clear of each other throughout.
+The overall Kaplan--Meier curve (\figref{fig:km-overall}) declines to approximately 0.53 by 36 months, with the steepest drop occurring during the first few months. At one year, roughly three quarters of the cohort remain alive.
+
+Sex and diabetes show little separation in survival (\figref{fig:km-sex-dm}). One-year survival is 0.770 versus 0.733 between the two sex groups, and 0.740 versus 0.764 for patients with and without diabetes. In contrast, age and discharge BUN show clear differences when split at their medians (\figref{fig:km-age-bun}). One-year survival is 0.661 for patients older than 76 years compared with 0.844 for younger patients, and 0.676 for discharge BUN above 28,mg/dL compared with 0.810 below this threshold. The confidence bands remain clearly separated over follow-up.
 
 \subsection{Project Assignment 2}
 
-PA2 selected a Cox model on sex, age, comorbidity burden, length of stay, discharge BUN,
-discharge creatinine and GFR, BNP, white blood cells, sodium, RDW, platelets, bilirubin,
-potassium and \dbun{} (\tabref{tab:pa2cox}; in-sample concordance 0.694). Nine terms are significant:
-age at 1.044 per year, discharge BUN at 1.021 per mg/dL, RDW at 1.120 per unit and BNP at
-1.0002 per pg/mL, with sodium, potassium and \dbun{} below 1. Sex, comorbidity burden,
-white blood cells, discharge creatinine, discharge GFR and platelets are not.
+PA2 selected a Cox proportional hazards model including sex, age, comorbidity burden, length of stay, discharge BUN, discharge creatinine and GFR, BNP, white blood cells, sodium, RDW, platelets, bilirubin, potassium, and \dbun{} (\tabref{tab:pa2cox}). The model achieved an in-sample concordance of 0.694.
 
-\dbun{} does add information beyond the discharge level: a likelihood-ratio test against
-the model without it gave 27.63 on 1 degree of freedom, $p = 1.5 \times 10^{-7}$, so it is
-retained throughout. A Schoenfeld residual test on a rank transform of time flagged two of
-sixteen terms --- discharge BUN at 0.036 and length of stay at 0.048 --- both marginally,
-so PA2 read the violations as mild.
+Nine model terms were statistically significant. Higher age, discharge BUN, RDW, and BNP were associated with increased hazard, with hazard ratios of 1.044 per year, 1.021 per mg/dL, 1.120 per RDW unit, and 1.0002 per pg/mL, respectively. Sodium, potassium, and \dbun{} had hazard ratios below 1. Sex, comorbidity burden, white blood cells, discharge creatinine, discharge GFR, and platelets were not significant.
 
-A log-normal AFT model on the same covariates agreed on direction throughout. Its one-year
-predictions (\figref{fig:cox-aft}) are almost identical to the Cox model's for age, separate slightly
-for RDW, and differ most for discharge BUN, where the AFT curve falls faster in mid-range
-and then crosses above in the tail. That figure sweeps BUN to its observed maximum of
-236\,mg/dL while three quarters of patients sit below 39, which is why percentile grids are
-used from Section~6.2 onwards.
+\dbun{} added information beyond discharge BUN alone. A likelihood-ratio test comparing the full model with a model excluding \dbun{} gave $\chi^2 = 27.63$ on 1 degree of freedom, with $p = 1.5 \times 10^{-7}$. It was therefore retained in all subsequent models. A Schoenfeld residual test using a rank transformation of time identified two of sixteen terms as potentially violating proportional hazards: discharge BUN ($p=0.036$) and length of stay ($p=0.048$). Because both results were marginal, PA2 treated the violations as mild.
+
+A log-normal AFT model fitted to the same covariates produced effects in the same direction as the Cox model. One-year predictions from the two models (\figref{fig:cox-aft}) are nearly identical across age, show somewhat greater separation for RDW, and differ most for discharge BUN. For BUN, the AFT prediction decreases more rapidly in the middle of the observed range before crossing above the Cox prediction in the upper tail. The original figure extends BUN to its observed maximum of 236,mg/dL, although 75% of patients have values below 39,mg/dL. For this reason, percentile-based grids are used from Section~6.2 onward.
+
 
 %======================================================================
 \section{Research questions}
@@ -271,13 +237,7 @@ over the IPCW Brier score, approximated by the trapezoidal rule on months 1 to 1
 with $\widehat{BS}(0) = 0$, which is exact since every patient is alive at discharge and
 every model predicts $S(0) = 1$.
 
-\subsection{Implementation}
 
-Python 3, seed 42. lifelines 0.30.3 (Cox and AFT models, Kaplan--Meier, Schoenfeld test);
-scikit-survival 0.28.0 (random survival forest, Uno's C-index, IPCW Brier score); pycox
-0.3.0 on torch 2.5.1 with torchtuples 0.2.2 (DeepSurv, Cox-Time); scikit-learn 1.9.0 (split,
-folds, standardisation); numpy 2.0.2, pandas 2.3.3, scipy 1.17.1, statsmodels 0.15.0 and
-matplotlib 3.11.1.
 
 %======================================================================
 \section{Results}
