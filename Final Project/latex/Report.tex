@@ -69,7 +69,7 @@ The overall Kaplan--Meier curve (\figref{fig:km-overall}) falls to about 0.53 by
 
 \subsection{Project Assignment 2}
 
-PA2 selected a Cox model including sex, age, comorbidity burden, length of stay, discharge BUN, discharge creatinine and GFR, BNP, white blood cells, sodium, RDW, platelets, bilirubin, potassium, and \dbun{} (\tabref{tab:pa2cox}; in-sample concordance 0.694). Nine of the sixteen terms are significant. Age, discharge BUN, and RDW have the largest hazard ratios; age alone increases the hazard by roughly 50\% per decade. Sodium, potassium, and \dbun{} are associated with lower hazard. Sex, comorbidity burden, white blood cells, discharge creatinine, discharge GFR, and platelets are not associated with survival in any fit.
+PA2 selected a Cox model including sex, age, comorbidity burden, length of stay, discharge BUN, discharge creatinine and GFR, BNP, white blood cells, sodium, RDW, platelets, bilirubin, potassium, and \dbun{} (\tabref{tab:pa2cox}; in-sample concordance 0.694). Nine of the sixteen terms are significant. Age, discharge BUN, and RDW are the most influential across the range these covariates occupy; age alone increases the hazard by roughly 50\% per decade. Sodium, potassium, and \dbun{} are associated with lower hazard. Sex, comorbidity burden, white blood cells, discharge creatinine, discharge GFR, and platelets are not associated with survival in any fit.
 
 \dbun{} adds information beyond the discharge level. A likelihood-ratio test against the model without it gave 27.63 on 1 degree of freedom, $p = 1.5 \times 10^{-7}$, so it is retained throughout. A Schoenfeld residual test based on a rank transformation of time flagged two of the sixteen terms, both only marginally. PA2 therefore treated the proportional hazards violations as mild.
 
@@ -140,7 +140,7 @@ where $\hat S_0$ is the Breslow baseline survival function and $\bar X$ contains
 
 For prediction plots, all covariates except the one being varied are fixed at representative training-set values. Continuous covariates are set to their medians, while comorbidity burden is set to its most common category. Sex is the only binary covariate, and its median coincides with the most common category. This defines a representative patient: a 76-year-old man with two or three comorbidities and otherwise median laboratory values. His predicted one-year survival is 0.821.
 
-Prediction grids span the 1st to the 99th percentile of the training distribution rather than the full observed range. This avoids plots dominated by extreme values of highly skewed covariates. The same grids and representative patient are reused in Section~6.3.
+Prediction grids span the 1st to the 99th percentile of the training distribution rather than the full observed range. This avoids plots dominated by extreme values of highly skewed covariates. The same grids and representative patient are reused in Section~6.3. Because \dbun{} is discharge minus admission BUN, holding it fixed while discharge BUN is swept moves the admission level by the same amount, so the discharge-BUN curves trace a uniform shift in urea; the effect of the discharge level at a fixed admission level is governed by the sum of the two coefficients and is about half as steep.
 
 
 \subsection{The three additional models}
@@ -151,7 +151,7 @@ All three additional models use the same training patients and the same sixteen 
 
 Unlike the Cox model, the RSF assumes neither a linear and additive risk score nor proportional hazards; nonlinear effects and interactions can emerge through the tree structure, while survival is estimated directly within terminal nodes.
 
-Two hyperparameters were tuned: minimum leaf size over 5, 15, 30, and 50, and the number of features considered at each split over 4, 8, and 16. Leaf size controls how many patients contribute to each terminal-node estimate; with an event rate of about 42%, a leaf of five contains only about two events on average. Restricting the number of candidate features can decorrelate the trees, but may also exclude strong predictors from a given split. The number of trees was fixed at 500, minimum split size at twice the leaf size, and tree depth was left unrestricted.
+Two hyperparameters were tuned: minimum leaf size over 5, 15, 30, and 50, and the number of features considered at each split over 4, 8, and 16. Leaf size controls how many patients contribute to each terminal-node estimate; with an event rate of about 42\%, a leaf of five contains only about two events on average. Restricting the number of candidate features can decorrelate the trees, but may also exclude strong predictors from a given split. The number of trees was fixed at 500, minimum split size at twice the leaf size, and tree depth was left unrestricted.
 
 \textbf{DeepSurv.} DeepSurv retains the Cox partial likelihood but replaces the linear predictor $X^{\top}\beta$ with a neural-network risk score $g(X)$:
 
@@ -177,9 +177,9 @@ Evaluating the full partial likelihood would require the network to be evaluated
 
 Hyperparameters were chosen by 5-fold cross-validation within the training set. The folds were drawn once and reused for all three models, and each configuration was scored by the integrated Brier score (IBS) over the first year so that tuning and evaluation target the same quantity. Cross-validation was preferred to a single validation split because only about a fifth of the cohort dies within the year, making a single split relatively noisy.
 
-Since nearby configurations differed by less than the fold-to-fold variation, a one-standard-error rule selected the simplest configuration within one SE of the best --- larger leaves for the forest, and fewer hidden units followed by higher dropout for the networks. The selected configurations were then refitted on all training patients. Epochs were not tuned separately: 20\% of each fold's fitting data was held out for early stopping, and the final networks were trained on all training patients for the average best-epoch count.
+Since nearby configurations differed by less than the fold-to-fold variation, a one-standard-error rule selected the most constrained configuration within one SE of the best --- larger leaves for the forest, with fewer candidate features per split as a tie-break, and fewer hidden units followed by higher dropout for the networks. The selected configurations were then refitted on all training patients. Epochs were not tuned separately: 20\% of each fold's fitting data was held out for early stopping, and the final networks were trained on all training patients for the average best-epoch count. Each network therefore fits on 80\% of a fold's fitting data while the Cox model and the forest use all of it, which makes the cross-validated comparison slightly conservative for the networks; all final models are refitted on the complete training set.
 
-\tabref{tab:hyper} gives the selected configurations. Both networks chose the smallest architecture considered with the higher dropout rate, while the forest selected the largest leaf size and most restrictive feature sampling. In each case, the search therefore moved toward the least flexible end of the grid, anticipating the test-set results. All four cross-validated scores lie within one standard error of one another.
+\tabref{tab:hyper} gives the selected configurations. Both networks chose the smallest architecture considered with the higher dropout rate, while the forest selected the largest leaf size and most restrictive feature sampling. The rule therefore moved each search toward the less flexible end of its grid, since the configurations there scored within one standard error of the best. All four cross-validated scores lie within one standard error of one another, so the selected configurations are one defensible choice among several rather than clearly optimal ones.
 
 \subsection{Evaluation measures}
 
@@ -204,7 +204,7 @@ based on the IPCW Brier score. The integral is approximated by the trapezoidal r
 
 \subsection{The refitted Cox model and its assumptions}
 
-\tabref{tab:coxtrain} shows the PA2 Cox model refitted on the training set. The estimates are highly stable: no hazard ratio changes by more than 2.2%, every full-data estimate lies within the corresponding training-set confidence interval, and concordance is essentially unchanged. Bilirubin and potassium lose significance, but their hazard ratios barely change. Instead, their confidence intervals widen after one fifth of the data is withheld, and both terms were already marginal in the full-data model. The seven remaining significant terms are essentially unchanged, so the main conclusions from PA2 hold.
+\tabref{tab:coxtrain} shows the PA2 Cox model refitted on the training set. The estimates are highly stable: no hazard ratio changes by more than 2.2\%, every full-data estimate lies within the corresponding training-set confidence interval, and concordance is essentially unchanged. Bilirubin and potassium lose significance, but their hazard ratios barely change. Instead, their confidence intervals widen after one fifth of the data is withheld, and both terms were already marginal in the full-data model. The seven remaining significant terms are essentially unchanged, so the main conclusions from PA2 hold.
 
 \dbun{} requires some clarification because its hazard ratio below 1 might suggest that an increase in BUN during admission is protective. With discharge BUN included in the model, however, the coefficient of \dbun{} represents the negative effect of admission BUN at a fixed discharge level. A hazard ratio of 0.990 per mg/dL increase in \dbun{} is therefore equivalent to 1.010 per mg/dL of admission BUN. Among two patients discharged with the same BUN, the patient who started at the higher level has the worse prognosis.
 
@@ -213,13 +213,13 @@ The Schoenfeld test gives a different pattern in the training set (\tabref{tab:p
 
 \subsection{One-year prediction from the refitted Cox model}
 
-\figref{fig:cox-oneyear} and \tabref{tab:coxpred} show predicted one-year survival across age, RDW, and discharge BUN. Which covariate matters most depends on the range considered. Across the full plotted grid, discharge BUN changes the prediction most, followed by age and RDW. Over the interquartile range, however, the order reverses: age separates predictions by about twice as much as discharge BUN and three times as much as RDW. Age therefore matters most for a typical patient, while discharge BUN dominates the full grid because of its long right tail and is most influential among the minority discharged with high values. All three Cox curves decline monotonically and flatten, a consequence of the linear predictor rather than an empirical finding. The next section tests whether the more flexible models depart from this shape.
+\figref{fig:cox-oneyear} and \tabref{tab:coxpred} show predicted one-year survival across age, RDW, and discharge BUN. Which covariate matters most depends on the range considered. Across the full plotted grid, discharge BUN changes the prediction most, followed by age and RDW. Over the interquartile range, however, the order reverses: age separates predictions by about twice as much as discharge BUN and three times as much as RDW. Age therefore matters most for a typical patient, while discharge BUN dominates the full grid because of its long right tail and because the sweep raises the admission level alongside it. All three Cox curves decline monotonically and flatten, a consequence of the linear predictor rather than an empirical finding. The next section tests whether the more flexible models depart from this shape.
 
 \subsection{Do the flexible models see the covariates differently? (RQ2)}
 
 \figref{fig:model-curves} overlays all four models on the grids from Section~6.2. Over the interquartile range, they agree closely: each produces a similar change in predicted survival for each covariate, and all four rank age first (\tabref{tab:modelcurves}). Only the forest reverses the order of the other two, ranking RDW above discharge BUN.
 
-The models diverge mainly in the tails, most clearly for discharge BUN. At the upper end of the plotted range, the Cox prediction falls to about 0.30, while the forest remains above 0.70 and the two neural networks lie in between. The Cox model continues its log-hazard slope across the grid. DeepSurv follows it to about 40,mg/dL before bending upward, while Cox-Time runs slightly below it through the middle of the range and then crosses back above. The forest flattens above about 75,mg/dL, where only around 4\% of training patients remain and a leaf size of 50 leaves little scope for further splitting. This plateau therefore reflects sparse data rather than evidence that risk stops increasing.
+The models diverge mainly in the tails, most clearly for discharge BUN. At the upper end of the plotted range, the Cox prediction falls to about 0.30, while the forest remains above 0.70 and the two neural networks lie in between. The Cox model continues its log-hazard slope across the grid. DeepSurv follows it to about 40\,mg/dL before bending upward, while Cox-Time runs slightly below it through the middle of the range and then crosses back above. The forest flattens above about 75\,mg/dL, where only around 4\% of training patients remain and a leaf size of 50 leaves little scope for further splitting. This plateau therefore reflects sparse data rather than evidence that risk stops increasing.
 
 RDW shows the same pattern more mildly, while age produces the closest agreement, with noticeable divergence only above about 85 years. Overall, the flexible models show little evidence of non-linearity missed by the Cox model in the data-dense part of the covariate distributions. Most disagreement occurs in the sparse tails, where all three flexible models eventually predict higher survival than the Cox model's linear extrapolation.
 
@@ -290,7 +290,7 @@ However, the significant BUN interaction does not improve prediction. In \tabref
 
 Seven terms remain important in the refitted Cox model (\tabref{tab:coxtrain}): age, discharge BUN, RDW, BNP, and length of stay are associated with higher hazard, while sodium and \dbun{} are associated with lower hazard. As discussed above, \dbun{} should be interpreted in relation to admission BUN rather than as evidence that rising BUN is protective. Sex, comorbidity burden, white blood cells, platelets, discharge creatinine, and discharge GFR are not associated with survival in any fit. Across the range occupied by most patients, age has the largest effect on predicted survival, roughly twice that of discharge BUN and three times that of RDW.
 
-The Cox results are stable after refitting on the training data. No hazard ratio changes by more than 2.2%, every full-data estimate lies within the corresponding training-set interval, and only two previously marginal terms lose significance because their intervals widen. The proportional hazards flags also change between fits, with no covariate flagged in both. Together with the absence of very small $p$-values, this suggests that proportional hazards remains an adequate approximation.
+The Cox results are stable after refitting on the training data. No hazard ratio changes by more than 2.2\%, every full-data estimate lies within the corresponding training-set interval, and only two previously marginal terms lose significance because their intervals widen. The proportional hazards flags also change between fits, with no covariate flagged in both. Together with the absence of very small $p$-values, this suggests that proportional hazards remains an adequate approximation.
 
 The flexible models show little evidence that the Cox model misses important non-linearity where most patients lie. Their prediction curves agree closely across the interquartile ranges, and all rank age as the strongest predictor. Cox, DeepSurv, and Cox-Time also rank individual test patients almost identically, with correlations above 0.97 and substantial overlap in their highest-risk quintiles. Most disagreement occurs in the sparse tails, where the forest flattens and the neural networks depart from the Cox extrapolation. These differences are more consistent with limited data than with strong evidence of curvature. The forest differs most in patient ranking, and this is reflected in weaker separation of its medium- and high-risk tertiles.
 
@@ -298,6 +298,7 @@ No model is clearly superior on the test set. Cox-Time has the highest Uno's C-i
 
 RQ1 and RQ2 therefore lead to the same overall conclusion. One-year prediction from discharge information reaches a C-index of about 0.69, and relaxing linearity, additivity, or proportional hazards does not produce a detectable improvement in discrimination or accuracy. RQ3 gives a more specific result: the \dbun{} $\times$ discharge BUN interaction is statistically significant, but adding it does not improve test performance.
 
+Three limitations bound these conclusions. The evaluation rests on a single 80/20 split at one seed, and since the differences in \tabref{tab:testperf} are smaller than a test set of this size can resolve, another seed could reorder them; a repeated split or nested cross-validation would place an interval around each number. The covariate set was selected in PA2 on the full dataset, so the patients later used for testing contributed to choosing the model evaluated on them, which makes all four test scores mildly optimistic, and the test set was subsequently consulted for the subgroup and interaction analyses of Sections~6.6 and~6.7 as well as for the primary comparison. Finally, the flexible models were tuned by a one-standard-error rule, which selected configurations at the less flexible end of each grid; a rule that took the outright minimum would give the forest in particular more freedom than it was allowed here, so the finding that added flexibility does not pay is conditional on that choice.
 
 
 %======================================================================
@@ -563,27 +564,27 @@ Cox-Time        & hidden [16], dropout 0.4, lr 0.01, 32 epochs     & 0.1105 & 0.
 are ordered by the full-data $p$-value.}
 \label{tab:coxtrain}
 \vspace{0.3em}
-\small
-\begin{tabular}{lccccc}
+\footnotesize
+\begin{tabular}{lcccccc}
 \toprule
-Covariate & HR (train) & 95\% CI (train) & $p$ (train) & HR (full) & $p$ (full) \\
+Covariate & HR (train) & 95\% CI (train) & $p$ (train) & HR (full) & 95\% CI (full) & $p$ (full) \\
 \midrule
-Age (years)             & 1.0447 & 1.0384 -- 1.0511 & $<$ 0.001 & 1.0438 & $<$ 0.001 \\
-BUN, discharge          & 1.0238 & 1.0197 -- 1.0279 & $<$ 0.001 & 1.0213 & $<$ 0.001 \\
-RDW                     & 1.1295 & 1.0963 -- 1.1638 & $<$ 0.001 & 1.1204 & $<$ 0.001 \\
-\dbun{}                 & 0.9900 & 0.9861 -- 0.9940 & $<$ 0.001 & 0.9903 & $<$ 0.001 \\
-BNP                     & 1.0002 & 1.0001 -- 1.0002 & $<$ 0.001 & 1.0002 & $<$ 0.001 \\
-Sodium                  & 0.9726 & 0.9611 -- 0.9843 & $<$ 0.001 & 0.9728 & $<$ 0.001 \\
-Length of stay          & 1.0083 & 1.0020 -- 1.0146 & 0.010 & 1.0094 & 0.001 \\
-Bilirubin               & 1.0988 & 0.9738 -- 1.2400 & 0.126 & 1.1208 & 0.037 \\
-Potassium               & 0.9196 & 0.8376 -- 1.0096 & 0.078 & 0.9141 & 0.038 \\
-Platelets               & 1.0005 & 0.9998 -- 1.0012 & 0.147 & 1.0004 & 0.100 \\
-Creatinine, discharge   & 0.9172 & 0.8345 -- 1.0080 & 0.073 & 0.9376 & 0.132 \\
-Comorbidity burden 2--3 & 0.8754 & 0.7181 -- 1.0672 & 0.188 & 0.8885 & 0.195 \\
-White blood cells       & 1.0001 & 0.9918 -- 1.0085 & 0.976 & 1.0028 & 0.436 \\
-Female sex              & 0.9809 & 0.8720 -- 1.1035 & 0.749 & 0.9693 & 0.558 \\
-GFR, discharge          & 1.0014 & 0.9975 -- 1.0053 & 0.492 & 1.0010 & 0.585 \\
-Comorbidity burden 4+   & 0.9835 & 0.8046 -- 1.2021 & 0.871 & 0.9882 & 0.898 \\
+Age (years)             & 1.0447 & 1.0384 -- 1.0511 & $<$ 0.001 & 1.0438 & 1.0382 -- 1.0495 & $<$ 0.001 \\
+BUN, discharge          & 1.0238 & 1.0197 -- 1.0279 & $<$ 0.001 & 1.0213 & 1.0176 -- 1.0249 & $<$ 0.001 \\
+RDW                     & 1.1295 & 1.0963 -- 1.1638 & $<$ 0.001 & 1.1204 & 1.0903 -- 1.1514 & $<$ 0.001 \\
+\dbun{}                 & 0.9900 & 0.9861 -- 0.9940 & $<$ 0.001 & 0.9903 & 0.9867 -- 0.9938 & $<$ 0.001 \\
+BNP                     & 1.0002 & 1.0001 -- 1.0002 & $<$ 0.001 & 1.0002 & 1.0001 -- 1.0002 & $<$ 0.001 \\
+Sodium                  & 0.9726 & 0.9611 -- 0.9843 & $<$ 0.001 & 0.9728 & 0.9627 -- 0.9831 & $<$ 0.001 \\
+Length of stay          & 1.0083 & 1.0020 -- 1.0146 & 0.010 & 1.0094 & 1.0037 -- 1.0151 & 0.001 \\
+Bilirubin               & 1.0988 & 0.9738 -- 1.2400 & 0.126 & 1.1208 & 1.0068 -- 1.2477 & 0.037 \\
+Potassium               & 0.9196 & 0.8376 -- 1.0096 & 0.078 & 0.9141 & 0.8397 -- 0.9951 & 0.038 \\
+Platelets               & 1.0005 & 0.9998 -- 1.0012 & 0.147 & 1.0004 & 0.9999 -- 1.0009 & 0.100 \\
+Creatinine, discharge   & 0.9172 & 0.8345 -- 1.0080 & 0.073 & 0.9376 & 0.8622 -- 1.0195 & 0.132 \\
+Comorbidity burden 2--3 & 0.8754 & 0.7181 -- 1.0672 & 0.188 & 0.8885 & 0.7431 -- 1.0624 & 0.195 \\
+White blood cells       & 1.0001 & 0.9918 -- 1.0085 & 0.976 & 1.0028 & 0.9958 -- 1.0098 & 0.436 \\
+Female sex              & 0.9809 & 0.8720 -- 1.1035 & 0.749 & 0.9693 & 0.8732 -- 1.0759 & 0.558 \\
+GFR, discharge          & 1.0014 & 0.9975 -- 1.0053 & 0.492 & 1.0010 & 0.9975 -- 1.0045 & 0.585 \\
+Comorbidity burden 4+   & 0.9835 & 0.8046 -- 1.2021 & 0.871 & 0.9882 & 0.8243 -- 1.1846 & 0.898 \\
 \bottomrule
 \end{tabular}
 \end{table}
